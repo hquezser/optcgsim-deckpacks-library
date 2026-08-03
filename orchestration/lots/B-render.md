@@ -61,8 +61,16 @@ Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).
 - HTML5 : `<!doctype html>`, `lang`, `<title>`, `<meta name="viewport">`.
-- **Zéro** `<script>`, zéro `@import`, zéro police ou image distante, zéro CDN. Aucune URL
-  ne doit sortir du `base_url` fourni.
+- **Zéro sous-ressource externe** : aucun `<script>`, `@import`, `url()`, `src=` ou
+  `<link>` pointant hors du `base_url`. Une sous-ressource est chargée automatiquement et
+  exposerait l'IP du visiteur à un tiers.
+- **En revanche, les liens externes sont exigés** : la `description` d'un pack contient les
+  URL de la source (Limitless, ChinoizeCupStats). Rends-les **cliquables**, avec
+  `rel="noreferrer nofollow"` et `target="_blank"`. Créditer la source est un choix
+  délibéré du projet — c'est ce qui le distingue d'une reprise de données non créditée —
+  et `noreferrer`/`nofollow` évitent de lui envoyer le référent du visiteur ou du poids SEO.
+  Attention à l'échappement : la description est du texte libre, seule l'URL devient une
+  balise, le reste reste échappé.
 - Mobile d'abord : une colonne, pas de largeur en pixels figée. Sobre, lisible, sans
   framework CSS.
 - **Aucun nom de carte** — uniquement des IDs type `OP15-058`. C'est un invariant légal du

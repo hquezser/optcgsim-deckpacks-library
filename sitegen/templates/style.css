@@ -1,0 +1,114 @@
+{# Une seule feuille, ~200 lignes max. Mobile d'abord, une colonne, sobre.
+   Pas de police distante, pas de framework, pas de requête réseau. #}
+:root {
+  --bg: #fafaf7;
+  --fg: #1a1a1a;
+  --muted: #555;
+  --line: #d8d8d2;
+  --accent: #1d4ed8;
+  --code-bg: #f0f0ea;
+  --import-bg: #eef4ff;
+  --import-border: #1d4ed8;
+  --xx: #888;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 16px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+}
+
+/* En-tête / pied */
+.site-header {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1rem;
+  align-items: baseline; justify-content: space-between;
+  padding: 0.75rem 1rem; border-bottom: 1px solid var(--line);
+}
+.site-home { font-weight: 700; color: var(--fg); }
+.site-header nav a { margin-right: 0.75rem; }
+.site-footer {
+  padding: 1rem; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 0.85rem;
+}
+
+main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
+
+/* Bloc import — visuellement dominant */
+.import-block {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--import-bg);
+  border: 2px solid var(--import-border);
+  border-radius: 0.5rem;
+}
+.import-title { margin: 0 0 0.25rem; font-size: 1.1rem; }
+.import-help { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
+.import-cmd {
+  margin: 0; padding: 0.75rem 1rem;
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 0.25rem; overflow-x: auto;
+  white-space: pre; font-size: 0.9rem;
+}
+.import-cmd code { background: none; padding: 0; }
+
+/* Pages */
+.page-head h1 { margin: 0 0 0.25rem; }
+.page-meta { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
+.page-meta span { margin-right: 0.75rem; }
+.t-desc { color: var(--muted); }
+
+/* Listes de tournois / archétypes */
+.tournament-list, .archetype-list { list-style: none; padding: 0; }
+.tournament-list li, .archetype-list li { border-bottom: 1px solid var(--line); }
+.tournament-list a, .archetype-list a {
+  display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem;
+  align-items: baseline; padding: 0.5rem 0;
+}
+.t-name { font-weight: 600; }
+.t-date, .t-count, .a-count { color: var(--muted); font-size: 0.85rem; }
+.a-count { margin-left: auto; }
+
+/* Decks */
+.deck-list { list-style: none; padding: 0; }
+.deck {
+  padding: 0.75rem 0; border-bottom: 1px solid var(--line);
+}
+.deck-head { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; align-items: baseline; }
+.d-place { font-weight: 700; min-width: 2.5rem; }
+.d-place-xx { color: var(--xx); font-weight: 400; }
+.d-archetype, .d-player { font-weight: 600; }
+.d-raw { color: var(--xx); font-style: italic; }
+.d-provenance { margin: 0.25rem 0; color: var(--muted); font-size: 0.9rem; }
+.d-leader { margin: 0.25rem 0; font-size: 0.9rem; }
+.card-list {
+  list-style: none; padding: 0; margin: 0.25rem 0;
+  display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem;
+}
+.card-list li { background: var(--code-bg); padding: 0.1rem 0.4rem; border-radius: 0.2rem; }
+.deck-unparsed { color: var(--muted); }
+
+.deck-import-single { margin-top: 0.5rem; }
+.deck-import-single summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+
+/* Méta */
+.meta-group { margin-bottom: 1.5rem; }
+.meta-group h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.25rem; }
+.deck-list.compact .deck { padding: 0.5rem 0; }
+
+/* Intro */
+.intro h1 { margin: 0 0 0.25rem; }
+.intro p { color: var(--muted); }
+.meta-link { background: var(--code-bg); padding: 0.75rem 1rem; border-radius: 0.4rem; }

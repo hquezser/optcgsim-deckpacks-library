@@ -24,8 +24,14 @@ Ce dépôt ne définit pas le format et ne scrape rien. Il **rend**.
   d'affiliation. Le projet est une contribution à l'écosystème, pas un produit.
 - **Zéro donnée utilisateur** : pas d'auth, pas de compte, pas de cookie, pas de
   formulaire. Il n'y a donc rien à protéger et aucune obligation RGPD.
-- **Zéro requête réseau sortante** depuis les pages produites : pas de CDN, pas de police
-  distante, pas d'image externe. Un site qui ne parle à personne ne fuit rien.
+- **Zéro sous-ressource externe** : pas de CDN, pas de police distante, pas d'image ou de
+  script tiers, pas de `@import`. Une sous-ressource est chargée automatiquement à
+  l'affichage et expose l'IP du visiteur à un tiers.
+- **Les liens externes sont en revanche attendus** : un `<a href>` n'est suivi que si le
+  visiteur clique, et citer la source d'une decklist (Limitless, ChinoizeCupStats) est à la
+  fois honnête et protecteur — c'est la provenance transparente qui distingue ce site d'une
+  reprise de données non créditée. Ces liens portent `rel="noreferrer nofollow"` : on cite
+  la source sans lui envoyer de référent ni lui promettre du poids SEO.
 - **Sortie déterministe** : deux builds sur la même entrée produisent des fichiers
   identiques octet pour octet. Ne jamais utiliser la date du jour, un hash d'itération, ni
   un ordre de `set`/`dict` non trié dans la sortie.

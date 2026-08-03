@@ -114,6 +114,9 @@ L'URL de base vient de `--base-url` (défaut `http://localhost:8000`).
 - **`/tournois/<tslug>/`** : bloc import du pack complet. Puis les decks triés par
   placement croissant (non parsés en fin de liste) ; par deck : placement, archétype,
   joueur, leader, la liste des cartes, et sa commande d'import individuelle.
+  La `description` du pack est affichée, et **les URL qu'elle contient sont rendues
+  cliquables** (`rel="noreferrer nofollow"`, `target="_blank"`) : c'est la provenance de la
+  donnée, et la créditer est un choix délibéré, pas un détail cosmétique.
 - **`/leaders/<aslug>/`** : bloc import. Puis les listes de cet archétype, tous tournois,
   triées par date décroissante puis placement ; chaque entrée indique son tournoi.
 - **`/meta/`** : bloc import. La composition du pack méta, groupée par archétype.
@@ -149,8 +152,9 @@ n'est modifié par aucun worker.
 2. le build s'exécute sur le corpus réel sans erreur
 3. tous les `deckpack.json` produits passent le validateur de la spec
 4. l'ensemble exact des chemins produits correspond à la carte des URLs ci-dessus
-5. aucune page ne contient de requête réseau sortante (`http://` / `https://` hors
-   `--base-url` et hors liens `href` internes)
+5. aucune page ne charge de **sous-ressource** externe (`src`, `<link>`, `@import`,
+   `url()`) — les `<a href>` externes sont autorisés, et doivent porter
+   `rel="noreferrer nofollow"`
 
 Rien d'autre ne compte comme « terminé ». Un worker ne déclare pas la victoire :
 `verify.sh` la déclare.

@@ -1,0 +1,48 @@
+{% extends "_base.html" %}
+{% block title %}{{ archetype_label }} — OPTCGSim deckpacks{% endblock %}
+{% block content %}
+
+<section class="page-head">
+  <h1>{{ archetype_label }}</h1>
+  <p class="page-meta">{{ pairs | length }} liste(s) — tous tournois confondus.</p>
+</section>
+
+{% include "_import.html" %}
+
+<section class="decks">
+  <h2>Listes par date décroissante</h2>
+  <ol class="deck-list">
+    {% for t, d in pairs %}
+    <li class="deck" id="{{ d.slug }}">
+      <div class="deck-head">
+        {% if d.placement is not none %}
+        <span class="d-place">{{ d.placement }}<sup>
+          {% if d.placement % 100 in [11, 12, 13] %}th
+          {% elif d.placement % 10 == 1 %}st
+          {% elif d.placement % 10 == 2 %}nd
+          {% elif d.placement % 10 == 3 %}rd
+          {% else %}th{% endif %}</sup></span>
+        {% else %}
+        <span class="d-place d-place-xx">—</span>
+        {% endif %}
+        <span class="d-player">{{ d.player }}</span>
+      </div>
+      <p class="d-provenance">
+        <a href="{{ base_url }}/tournois/{{ t.slug }}/">{{ t.name }}</a>
+        — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+      </p>
+      <div class="deck-body">
+        <p class="d-leader">Leader : <code>{{ d.leader_id }}</code>
+          — {{ d.total_cards }} cartes hors leader.</p>
+        <ul class="card-list">
+          {% for card_id, qty in d.cards %}
+          <li><code>{{ qty }}x {{ card_id }}</code></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{% endblock %}

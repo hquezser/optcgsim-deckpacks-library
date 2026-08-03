@@ -52,20 +52,53 @@ def check_url_map(dist: Path, site) -> list[str]:
     return errs
 
 
+# Ressources qu'un navigateur va chercher TOUT SEUL en affichant la page. C'est cela qui
+# ferait fuiter l'IP du visiteur vers un tiers — pas un lien qu'il choisit de cliquer.
+_SUBRESOURCE_RE = re.compile(
+    r"""(?:src|srcset|data-src)\s*=\s*["']([^"']+)"""      # img, script, iframe, video…
+    r"""|<link[^>]+href\s*=\s*["']([^"']+)"""              # feuilles, icônes, preload
+    r"""|@import\s+(?:url\()?["']?([^"')\s;]+)"""          # @import CSS
+    r"""|url\(\s*["']?([^"')]+)""",                        # url() CSS
+    re.IGNORECASE,
+)
+
+
 def check_no_outbound(dist: Path, base_url: str) -> list[str]:
-    """Invariant : une page produite ne fait aucune requête réseau sortante."""
+    """Invariant : une page produite ne déclenche aucune requête vers un tiers.
+
+    Distinction essentielle, et c'est l'erreur que ce contrôle faisait au départ : une
+    sous-ressource (`src`, `<link>`, `@import`, `url()`) est récupérée automatiquement à
+    l'affichage et expose l'IP du visiteur à un tiers — un `<a href>` externe, non : il
+    n'est suivi que si le visiteur clique, et c'est précisément le mécanisme d'attribution
+    de la source (cf. AGENTS.md). Une URL en texte brut ne déclenche rien du tout.
+    """
     errs = []
     for p in sorted(dist.rglob("*")):
         if p.suffix not in {".html", ".css"}:
             continue
         text = p.read_text(encoding="utf-8")
         rel = p.relative_to(dist).as_posix()
-        for url in set(re.findall(r"https?://[^\s\"'<>)]+", text)):
-            if not url.startswith(base_url):
-                errs.append(f"{rel} : URL externe {url}")
+
+        for groups in _SUBRESOURCE_RE.findall(text):
+            url = next((g for g in groups if g), "")
+            if url.lower().startswith(("http://", "https://")) \
+                    and not url.startswith(base_url):
+                errs.append(f"{rel} : sous-ressource externe {url}")
         for motif in _MOTIFS_INTERDITS:
             if motif in text.lower():
                 errs.append(f"{rel} : motif interdit « {motif} »")
+
+        # Un lien externe est autorisé, mais ne doit pas fuiter le référent ni offrir
+        # gratuitement du poids SEO à la source qu'on cite.
+        for href in re.findall(r"""<a\s[^>]*href\s*=\s*["'](https?://[^"']+)["'][^>]*>""",
+                               text, re.IGNORECASE):
+            if href.startswith(base_url):
+                continue
+            balise = re.search(
+                r"""<a\s[^>]*href\s*=\s*["']""" + re.escape(href) + r"""["'][^>]*>""",
+                text, re.IGNORECASE)
+            if balise and "noreferrer" not in balise.group(0).lower():
+                errs.append(f"{rel} : lien externe sans rel=noreferrer -> {href}")
     return errs
 
 

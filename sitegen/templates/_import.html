@@ -1,0 +1,8 @@
+{# Bloc « import » — l'élément visuellement dominant de chaque page.
+   `pack_url` est un chemin absolu depuis la racine du site (ex. /tournois/x/deckpack.json). #}
+<section class="import-block">
+  <h2 class="import-title">Importer dans OPTCGSim</h2>
+  <p class="import-help">Copiez la commande ci-dessous et collez-la dans
+    <code>optcgsim studio</code>.</p>
+  <pre class="import-cmd"><code>{{ import_command(base_url, pack_url) }}</code></pre>
+</section>

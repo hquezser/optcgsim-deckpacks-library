@@ -82,17 +82,57 @@ def test_index_liste_tournois_et_archetypes(built):
     assert "meta/" in page
 
 
-def test_aucune_requete_reseau_sortante(built):
-    """Invariant AGENTS.md : les pages produites ne parlent à personne."""
+def test_aucune_sous_ressource_externe(built):
+    """Invariant AGENTS.md : rien n'est chargé automatiquement depuis un tiers.
+
+    Une sous-ressource expose l'IP du visiteur à l'affichage ; un `<a href>` externe non
+    (cf. test_attribution_de_la_source ci-dessous, qui les exige au contraire).
+    """
     out, paths = built
+    sous_ressource = re.compile(
+        r"""(?:src|srcset|data-src)\s*=\s*["']([^"']+)"""
+        r"""|<link[^>]+href\s*=\s*["']([^"']+)"""
+        r"""|@import\s+(?:url\()?["']?([^"')\s;]+)"""
+        r"""|url\(\s*["']?([^"')]+)""", re.IGNORECASE)
+
     for p in paths:
         if p.suffix not in {".html", ".css"}:
             continue
         text = p.read_text(encoding="utf-8")
-        for url in re.findall(r"https?://[^\s\"'<>)]+", text):
-            assert url.startswith(BASE), f"URL externe dans {p.name} : {url}"
+        for groups in sous_ressource.findall(text):
+            url = next((g for g in groups if g), "")
+            if url.lower().startswith(("http://", "https://")):
+                assert url.startswith(BASE), f"sous-ressource externe dans {p.name} : {url}"
         for motif in ("<script", "@import", "cdn.", "fonts.google", "googletagmanager"):
             assert motif not in text.lower(), f"{motif} interdit dans {p.name}"
+
+
+def test_attribution_de_la_source(built):
+    """Les URL de la `description` deviennent des liens cliquables et crédités.
+
+    Citer Limitless est un choix délibéré : c'est ce qui distingue ce site d'une reprise de
+    données non créditée. `noreferrer` pour ne pas leur envoyer le référent du visiteur,
+    `nofollow` pour ne pas leur promettre de poids SEO.
+    """
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    lien = re.search(
+        r"""<a\s[^>]*href=["']https://onepiece\.limitlesstcg\.com/tournaments/431["'][^>]*>""",
+        page, re.IGNORECASE)
+    assert lien, "l'URL source de la description n'est pas rendue cliquable"
+    assert "noreferrer" in lien.group(0).lower()
+    assert "nofollow" in lien.group(0).lower()
+
+
+def test_tout_lien_externe_est_protege(built):
+    out, paths = built
+    for p in [q for q in paths if q.suffix == ".html"]:
+        text = p.read_text(encoding="utf-8")
+        for balise in re.findall(r"<a\s[^>]*href\s*=\s*[\"']https?://[^\"']+[\"'][^>]*>",
+                                 text, re.IGNORECASE):
+            if BASE in balise:
+                continue
+            assert "noreferrer" in balise.lower(), f"lien externe nu dans {p.name} : {balise}"
 
 
 def test_html_minimal_valide_et_responsive(built):
