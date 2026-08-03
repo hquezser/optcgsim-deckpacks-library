@@ -6,6 +6,7 @@
 
 <section class="page-head">
   <h1>{{ format_label }}</h1>
+  {% if role_label %}<p class="format-role-label">{{ role_label }}</p>{% endif %}
   <p class="page-meta">{{ tournaments | length }} tournoi(s) — {{ total_lists }} liste(s).</p>
 </section>
 

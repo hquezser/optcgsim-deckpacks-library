@@ -10,20 +10,29 @@
       target="_blank">optcgsim-studio</a>.</p>
 </section>
 
-{% if format_rows %}
+{% if format_groups %}
 <section class="formats">
   <h2>Formats</h2>
-  <p>Le format (« la méta ») est le premier repère qu'un joueur cherche.</p>
-  <ul class="format-list">
-    {% for fslug, label, n_tour, n_lists in format_rows %}
-    <li>
-      <a href="{{ rel }}formats/{{ fslug }}/">
-        <span class="f-label">{{ label }}</span>
-        <span class="f-count">{{ n_tour }} tournoi(s) · {{ n_lists }} liste(s)</span>
-      </a>
-    </li>
-    {% endfor %}
-  </ul>
+  <p>Le format (« la méta ») est le premier repère qu'un joueur cherche. Le simulateur
+    reçoit les sets avant le circuit papier : un format peut donc être déjà joué en
+    ligne quand les tournois papier en sont encore au précédent.</p>
+  {% for role_key, role_title, rows in format_groups %}
+    {% if rows %}
+    <section class="format-role format-{{ role_key }}">
+      <h3>{{ role_title }}</h3>
+      <ul class="format-list">
+        {% for fslug, label, n_tour, n_lists in rows %}
+        <li>
+          <a href="{{ rel }}formats/{{ fslug }}/">
+            <span class="f-label">{{ label }}</span>
+            <span class="f-count">{{ n_tour }} tournoi(s) · {{ n_lists }} liste(s)</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  {% endfor %}
 </section>
 {% endif %}
 

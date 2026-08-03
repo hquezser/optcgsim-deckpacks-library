@@ -261,6 +261,19 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         )
         for fslug in _formats_recent_first(site)
     ]
+    # Rôles : courant / à venir / passés. Ce sont des rôles, pas des identités —
+    # les formats gardent leurs codes réels et leurs URLs. On annote, on ne renomme pas.
+    current = site.current_format
+    upcoming = set(site.upcoming_formats)
+    past = set(site.past_formats)
+    format_groups = [
+        ("courant", "Format courant",
+         [r for r in format_rows if r[0] == current and current]),
+        ("a-venir", "Formats à venir",
+         [r for r in format_rows if r[0] in upcoming]),
+        ("passes", "Formats passés",
+         [r for r in format_rows if r[0] in past]),
+    ]
     recent = site.sorted_tournaments[:20]
     index_tpl = env.get_template("index.html")
     written.append(_write(out, "index.html", index_tpl.render(
@@ -268,6 +281,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         recent_tournaments=recent,
         archetype_rows=archetype_rows,
         format_rows=format_rows,
+        format_groups=format_groups,
         meta_count=len(meta_pairs(site)),
         rel="",
         **ctx_common,
@@ -304,6 +318,16 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     for fslug in _formats_recent_first(site):
         ts = fmts[fslug]
         label = site.format_label(fslug)
+        # Rôle du format pour cette page : un visiteur arrivant directement
+        # doit savoir s'il regarde le méta courant ou un méta à venir.
+        if fslug == site.current_format and fslug:
+            role_label = "Format courant"
+        elif fslug in upcoming:
+            role_label = "Format à venir"
+        elif fslug in past:
+            role_label = "Format passé"
+        else:
+            role_label = ""
         # Archétypes de ce format, triés par nombre de listes décroissant.
         fleaders = site.leaders(fslug)
         f_arch_rows = sorted(
@@ -318,6 +342,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             site=site,
             format_slug=fslug,
             format_label=label,
+            role_label=role_label,
             tournaments=ts,
             total_lists=total_lists,
             archetype_rows=f_arch_rows,
