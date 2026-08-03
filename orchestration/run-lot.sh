@@ -57,8 +57,24 @@ for tour in $(seq 1 "$MAX"); do
     } >> "$PROMPT"
   fi
 
-  ( cd "$WORKDIR" && devin -p --permission-mode=dangerous --model="$MODEL" \
-      --prompt-file "$PROMPT" ) 2>&1 | tee "$LOG_DIR/lot-$LOT.tour$tour.worker.log"
+  # --respect-workspace-trust false : le mode non interactif ne peut pas afficher
+  # l'invite de confiance et échouerait. Portée volontairement limitée à cette commande —
+  # on ne modifie pas ~/.config/devin/config.json, donc aucun autre dossier n'est affecté.
+  WLOG="$LOG_DIR/lot-$LOT.tour$tour.worker.log"
+  ( cd "$WORKDIR" && devin -p --permission-mode=dangerous \
+      --respect-workspace-trust false --model="$MODEL" --prompt-file "$PROMPT" ) 2>&1 \
+    | tee "$WLOG"
+  WORKER_RC="${PIPESTATUS[0]}"
+
+  # Un worker qui n'a jamais démarré (mauvais drapeau, modèle inconnu, auth expirée) ne
+  # doit pas consommer les tentatives : le portillon échouerait 4 fois pour la même raison,
+  # en masquant la vraie cause derrière un ImportError trompeur.
+  if [ "$WORKER_RC" -ne 0 ] && [ "$(wc -c <"$WLOG")" -lt 2000 ]; then
+    echo "✗ le worker n'a pas démarré (code $WORKER_RC) — abandon immédiat, pas une"
+    echo "  erreur d'implémentation. Cause brute :"
+    sed 's/^/    /' "$WLOG"
+    exit 2
+  fi
 
   echo "──────── portillon lot $LOT"
   GATE_OUT="$( cd "$WORKDIR" && eval "$GATE" 2>&1 )"
