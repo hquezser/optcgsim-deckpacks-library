@@ -114,6 +114,13 @@ studio decks import-pack https://<base-url>/<chemin>/deckpack.json
 
 L'URL de base vient de `--base-url` (défaut `http://localhost:8000`).
 
+**`--base-url` ne sert QU'À la commande d'import affichée.** Tous les liens internes et
+toutes les ressources (feuille de style comprise) sont **relatifs au document**, jamais
+absolus. Sinon `dist/` ne fonctionne que servi depuis l'URL exacte du build : changer de
+domaine, déployer dans un sous-chemin — ce que fait GitHub Pages pour un dépôt de projet —
+ou ouvrir un fichier en `file://` casse tout, feuille de style incluse. Le relatif au
+document (et non à la racine) est le seul qui survive aux trois cas.
+
 **La commande doit être lisible et sélectionnable en entier, sans scroll horizontal.** Mesuré
 en mobile 375 px, elle était tronquée à 65 % derrière une barre de défilement de quelques
 millimètres — le seul élément qui justifie le site était donc inutilisable. Le contrat exige

@@ -169,6 +169,37 @@ def test_placement_sans_exposant(built):
     assert "1st" in page
 
 
+def test_liens_internes_et_ressources_relatifs(built):
+    """`dist/` doit être servable depuis n'importe où — domaine, sous-chemin, ou file://.
+
+    Un `href`/`src` interne absolu contre `--base-url` fige le site sur une seule URL : la
+    feuille de style meurt dès qu'on déploie ailleurs. Seule la commande d'import affichée
+    est absolue, parce qu'elle doit être collable telle quelle dans un terminal.
+    """
+    out, paths = built
+    for p in [q for q in paths if q.suffix in {".html", ".css"}]:
+        text = p.read_text(encoding="utf-8")
+        for attr in ("href", "src"):
+            for url in re.findall(rf"""{attr}\s*=\s*["']([^"']+)""", text):
+                assert not url.startswith(BASE), \
+                    f"{p.name} : {attr} interne absolu ({url}) — doit être relatif"
+
+
+def test_commande_import_reste_absolue(built):
+    """Corollaire : la commande, elle, DOIT porter l'URL complète."""
+    out, _ = built
+    assert f"studio decks import-pack {BASE}/meta/deckpack.json" in _html(out, "meta/index.html")
+
+
+def test_site_utilisable_en_file_url(built):
+    """Test de portabilité : la feuille de style doit être atteignable depuis le document."""
+    out, _ = built
+    page = _html(out, "leaders/purple-enel/index.html")
+    href = re.search(r"""<link[^>]+href\s*=\s*["']([^"']+)""", page).group(1)
+    cible = (out / "leaders" / "purple-enel" / href).resolve()
+    assert cible.is_file(), f"feuille de style introuvable depuis la page : {href}"
+
+
 def test_attribution_porte_un_libelle_lisible(built):
     """Une URL brute de 45 caractères comme texte de lien n'est pas de l'attribution.
 

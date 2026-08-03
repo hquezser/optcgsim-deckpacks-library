@@ -84,6 +84,21 @@ d'un examen du rendu réel en mobile 375 px — chacun a un test qui échoue auj
 6. **Supprime le `<sup>` du placement** : `1<sup>st</sup>` s'affiche « 1 st » et se lit comme
    une coquille. Rends `1st` en texte contigu.
 
+## Correctif de portabilité (test rouge)
+
+Les liens internes et la feuille de style sont aujourd'hui **absolus** contre `--base-url`
+(`<link rel="stylesheet" href="https://exemple.org/style.css">`). Conséquence : `dist/` ne
+fonctionne que servi depuis l'URL exacte du build — changer de domaine, déployer dans un
+sous-chemin (ce que fait GitHub Pages pour un dépôt de projet) ou ouvrir un fichier en
+`file://` et la feuille de style meurt, le site s'affiche brut.
+
+Rends **relatifs au document** tous les `href`/`src` internes, feuille de style comprise
+(`../../style.css` depuis `/leaders/<aslug>/`, etc.). Le relatif au document, et non à la
+racine, est le seul qui survive aux trois cas.
+
+`--base-url` ne doit plus servir qu'à **une** chose : l'URL affichée dans la commande
+d'import, qui doit rester absolue pour être collable dans un terminal.
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).
