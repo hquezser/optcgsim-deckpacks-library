@@ -21,6 +21,24 @@ Ce dépôt ne définit pas le format et ne scrape rien. Il **rend**.
   invariant est ce qui rend le projet publiable ; il n'est pas négociable pour du confort
   d'affichage.
 
+  **Question tranchée le 2026-08-03 — ne pas la rouvrir.** Afficher des images de cartes,
+  des noms, des statistiques de jeu ou un lien par carte vers une base externe a été
+  examiné et **écarté**. L'affichage en IDs seuls n'est pas une limite subie mais un choix
+  de produit : la promesse du site est l'import en un clic, pas la consultation. Le lecteur
+  voit les cartes dans le simulateur, après import — c'est là qu'elles sont lisibles, avec
+  leurs véritables illustrations, et légalement.
+
+  Précisions utiles si la question resurgit malgré tout :
+  - Les images existent déjà sur la machine de tout lecteur potentiel
+    (`StreamingAssets/Cards/<SET>/<ID>.png`, que `studio/gamepaths.py` sait localiser) :
+    les republier n'apporterait rien à personne et constituerait la seule redistribution
+    franchement indéfendable du projet. Le hotlinking est pire : fuite d'IP des visiteurs,
+    bande passante d'un tiers, et rupture de l'invariant zéro-sous-ressource.
+  - Les noms et statistiques sont, eux, disponibles hors ligne dans
+    `optcgsim-haki-public/optcgsim_haki/data/card_stats.json` (2558 cartes). Leur absence
+    ici est donc bien une décision, pas un manque de données — ne pas « corriger » ce qui
+    ressemblerait à un oubli.
+
   **Exception unique et assumée : le libellé d'archétype.** On affiche « Purple Enel » et
   non `OP15-058`, alors qu'« Enel » est un nom de carte. C'est une exception raisonnée, pas
   un oubli : ce libellé est une **donnée de tournoi publique** produite en amont par
