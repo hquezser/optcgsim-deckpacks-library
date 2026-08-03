@@ -157,6 +157,33 @@ def check_packs_valid(dist: Path) -> list[str]:
     return errs
 
 
+def check_format_coherence(site) -> list[str]:
+    """Un tournoi ne doit pas jouer de cartes dont la légalité est postérieure à son format.
+
+    C'est le garde-fou du cas ChinoizeCup : un tournoi en ligne joue le pool avant le circuit
+    papier (ST31/32/33 vus en ligne quand aucun regional ne dépassait ST30). Étiqueté « OP16 »,
+    il serait agrégé avec les regionals et fabriquerait un cœur commun qu'aucun deck réel ne
+    possède — la même classe d'erreur que le mélange de formats, mais invisible à l'œil.
+
+    Échec dur : soit l'étiquette est fausse, soit le calendrier de `sitegen/formats.py` est
+    incomplet. Les deux demandent une correction, pas un avertissement qu'on ignore.
+    """
+    from sitegen import formats as F
+
+    errs = []
+    for t in site.sorted_tournaments:
+        sets = set()
+        for d in t.decks:
+            sets |= set(F.sets_in_text(d.text))
+        apres = F.sets_after_format(t.format, tuple(sets))
+        if apres:
+            errs.append(
+                f"{t.slug} : étiqueté {t.format} mais joue {', '.join(apres)} — "
+                f"set(s) légalisé(s) plus tard. Étiquette fausse, ou calendrier à compléter "
+                f"dans sitegen/formats.py.")
+    return errs
+
+
 def check_studio_resolves(dist: Path) -> list[str]:
     """Chaque deck publié doit être RÉELLEMENT importable par le studio.
 
@@ -214,6 +241,7 @@ def main(argv: list[str]) -> int:
         ("carte des URLs conforme au contrat", check_url_map(dist, site)),
         ("aucune requête réseau sortante", check_no_outbound(dist, base_url)),
         ("aucun contenu sous copyright", check_no_card_names(dist)),
+        ("cohérence format / pool de cartes", check_format_coherence(site)),
         ("importabilité réelle par le studio", check_studio_resolves(dist)),
     ]
 

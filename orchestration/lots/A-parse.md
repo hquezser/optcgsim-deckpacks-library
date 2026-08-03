@@ -51,9 +51,28 @@ environnement. `load_site` doit renseigner `Tournament.format`. Deux sources, da
 2. à défaut, un **tag** de deck de la forme `op\d+(\.\d+)?` (`op16`, `op14.5`), à normaliser
    en majuscules. Prends les tags du premier deck qui en porte un.
 
-`""` si aucune ne donne rien. Attention au piège réel : les tournois ChinoizeCupStats
-portent un tag `op` **nu**, qui ne désigne aucun format — il ne doit pas matcher. Ne devine
-jamais un format : un tournoi non classé est préférable à un tournoi mal classé.
+3. **à défaut encore, déduction depuis le pool de cartes** — `sitegen/formats.py` (figé)
+   fournit `sets_in_text(text)` et `infer_format(set_codes)`. Le calendrier de sorties est
+   connu : un set n'est légal qu'à partir d'un format donné, donc un tournoi ne peut pas être
+   antérieur au set le plus récent qu'il joue.
+
+   C'est ce qui classe les tournois ChinoizeCupStats, joués **sur le simulateur** : leur pool
+   est en avance sur le circuit papier. Cas réel du corpus — un tournoi en ligne de juin joue
+   ST31/32/33 (starters OP16.5) quand les regionals de juillet plafonnent à ST30 (OP16). La
+   déduction le classe donc en OP16.5, ce qui est exact.
+
+`""` si aucune des trois ne donne rien. Attention au piège réel : les tournois
+ChinoizeCupStats portent un tag `op` **nu**, qui ne désigne aucun format — il ne doit pas
+matcher. Ne devine jamais un format : un tournoi non classé est préférable à un tournoi mal
+classé.
+
+**L'ordre compte.** La déduction n'est qu'une borne inférieure (personne n'a peut-être joué
+le dernier set sorti) : elle ne doit **jamais** écraser une étiquette explicite. Melbourne
+est étiqueté OP14.5 et déduit OP14 — l'étiquette gagne.
+
+Ajoute enfin un `BuildWarning` listant les sets que `formats.unknown_sets()` ne sait pas
+dater, une fois pour tout le corpus. Sans ça, la sortie d'un nouveau set passerait inaperçue
+et faussserait les déductions en silence.
 
 Points d'attention, tous couverts par les tests :
 

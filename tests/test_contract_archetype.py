@@ -54,9 +54,16 @@ def test_core_cards_retient_le_seuil_et_la_modale(core):
 
 
 def test_core_vide_en_dessous_du_seuil_de_listes(site):
-    """purple-enel n'a que 2 listes : un « cœur commun » n'y a aucun sens."""
-    assert len(site.leaders()["purple-enel"]) < archetype.MIN_LISTS_FOR_DIFF
-    assert archetype.core_cards(site.leaders()["purple-enel"]) == {}
+    """purple-enel est éclaté sur trois formats : aucun n'atteint le seuil de 4 listes.
+
+    Le filtrage par format est l'usage CORRECT — c'est celui que la spec impose pour tout
+    agrégat. Sans lui, les 4 listes toutes formats confondues passeraient le seuil et
+    produiraient un cœur commun mélangeant OP15, OP16 et OP16.5, donc un deck impossible.
+    """
+    for fslug in site.formats():
+        pairs = site.leaders(fslug).get("purple-enel", ())
+        assert len(pairs) < archetype.MIN_LISTS_FOR_DIFF
+        assert archetype.core_cards(pairs) == {}
     assert archetype.core_cards(()) == {}
 
 

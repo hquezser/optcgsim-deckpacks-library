@@ -64,10 +64,10 @@ def test_parse_text_tolere_lignes_vides_et_espaces():
 # --- load_site -----------------------------------------------------------------------
 
 def test_load_site_lit_le_corpus_fixture(site):
-    assert len(site.tournaments) == 3
+    assert len(site.tournaments) == 4
     slugs = {t.slug for t in site.tournaments}
     assert slugs == {"2026-07-04-regional-bielefeld", "2026-04-01-regional-ancien",
-                     "2026-04-15-treasure-cup-noyau"}
+                     "2026-04-15-treasure-cup-noyau", "2026-06-15-chinoizecup-avance"}
 
 
 def test_load_site_derive_la_date_du_slug(site):
@@ -101,8 +101,31 @@ def test_load_site_renseigne_le_format(site):
         "2026-07-04-regional-bielefeld": "OP16",
         "2026-04-01-regional-ancien": "OP15",
         "2026-04-15-treasure-cup-noyau": "OP15",
+        # Ni préfixe de nom ni tag de format : déduit du pool (ST31 -> starter OP16.5).
+        "2026-06-15-chinoizecup-avance": "OP16.5",
     }
     assert {t.slug: t.format for t in site.tournaments} == attendu
+
+
+def test_format_deduit_du_pool_en_dernier_recours(site):
+    """Le décalage réel du simulateur : un tournoi de juin en avance sur les OP16 de juillet.
+
+    Troisième source, après le préfixe de nom et les tags. C'est ce qui permet de classer
+    les tournois ChinoizeCupStats, dont le seul tag est « op » — lequel ne désigne aucun
+    format et ne doit surtout pas être interprété comme tel.
+    """
+    ccs = next(t for t in site.tournaments if "chinoizecup" in t.slug)
+    assert ccs.format == "OP16.5"
+    assert ccs.format_slug == "op16-5"
+    # La déduction ne doit PAS écraser une étiquette explicite, même en désaccord.
+    melbourne_like = parse.parse_format("OP14.5 21st March 2026 - X", ("op16",))
+    assert melbourne_like == "OP14.5"
+
+
+def test_deduction_ne_prime_jamais_sur_une_etiquette(site):
+    """Les tournois étiquetés gardent leur étiquette : la déduction est une borne inférieure."""
+    biel = next(t for t in site.tournaments if t.slug.endswith("bielefeld"))
+    assert biel.format == "OP16"
 
 
 def test_load_site_conserve_le_deck_non_parsable(site):

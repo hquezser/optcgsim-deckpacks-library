@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "name": "CHINOIZECUP #199",
+  "author": "chinoizecup-scraper",
+  "description": "Tournoi en ligne, joué sur le simulateur. Reproduit le décalage réel : le pool y est EN AVANCE sur le circuit papier — ST31 est un starter OP16.5, alors que les regionals de juillet de cette fixture sont encore en OP16. Aucune étiquette de format dans le nom, et le seul tag est « op » (qui ne désigne aucun format) : le format doit donc être DÉDUIT du pool. Source: https://chinoizecupstats.com/tournaments/999",
+  "decks": [
+    {
+      "name": "Purple Enel — Krullzor (1)",
+      "tags": ["meta", "online", "op", "2026"],
+      "text": "1xOP15-058\n4xOP15-061\n4xST31-004\n3xOP12-071\n2xOP10-067"
+    },
+    {
+      "name": "Purple Enel — mirkosp95 (2)",
+      "tags": ["meta", "online", "op", "2026"],
+      "text": "1xOP15-058\n4xOP15-061\n3xST31-004\n4xOP15-067"
+    }
+  ]
+}

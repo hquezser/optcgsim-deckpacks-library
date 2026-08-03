@@ -91,8 +91,10 @@ def test_write_packs_emet_les_chemins_du_contrat(written):
 def test_write_packs_pack_leader_agrege_les_tournois(written):
     out, _ = written
     pack = json.loads((out / "leaders" / "purple-enel" / "deckpack.json").read_text())
-    # Enel apparaît dans les deux tournois de la fixture.
-    assert len(pack["decks"]) == 2
+    # Enel apparaît dans trois tournois : Bielefeld (OP16), Ancien (OP15) et le tournoi en
+    # ligne en avance (OP16.5, 2 listes). Le pack NON restreint les agrège tous — c'est un
+    # inventaire, à distinguer des packs par format qui, eux, servent les agrégats.
+    assert len(pack["decks"]) == 4
     assert pack["decks"][0]["name"].startswith("Purple Enel")
 
 
