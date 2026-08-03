@@ -183,6 +183,22 @@ def sort_cards(cards) -> list:
     return sorted(cards, key=lambda c: (-c[1], c[0]))
 
 
+def _formats_recent_first(site: Site) -> list[str]:
+    """Slugs de format du plus récent au plus ancien.
+
+    `Site.formats()` trie par slug alphabétique — ce qui n'est pas l'ordre demandé par
+    la spec (« du plus récent au plus ancien »). On retrie ici sur la date du tournoi le
+    plus récent de chaque format (premier élément de `site.formats()[fslug]`, puisque
+    `sorted_tournaments` est lui-même récent-d'abord). Tiebreak déterministe sur le slug.
+    """
+    fmts = site.formats()
+    def key(fslug: str) -> tuple:
+        ts = fmts[fslug]
+        ref = ts[0].date
+        return (-(ref.toordinal() if ref else 0), fslug)
+    return sorted(fmts.keys(), key=key)
+
+
 def _env(templates_dir: Path) -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(templates_dir)),
@@ -226,19 +242,32 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     written.append(_write(out, "style.css", style_tpl.render(**ctx_common)))
 
     # --- index.html (profondeur 0) -----------------------------------------
-    leaders = site.leaders()  # dict trié par aslug
+    leaders = site.leaders()  # dict trié par aslug (tous formats confondus)
     archetype_rows = [
         (aslug, site.archetype_label(aslug), len(pairs))
         for aslug, pairs in leaders.items()
     ]
     # Tri par nombre de listes décroissant, puis libellé croissant (déterministe).
     archetype_rows.sort(key=lambda r: (-r[2], r[1]))
+    # Formats connus, du plus récent au plus ancien, avec leur nombre de tournois
+    # et de listes. C'est le premier repère qu'un joueur cherche (« quelle méta ? »).
+    fmts = site.formats()
+    format_rows = [
+        (
+            fslug,
+            site.format_label(fslug),
+            len(fmts[fslug]),
+            sum(len(t.parsed_decks) for t in fmts[fslug]),
+        )
+        for fslug in _formats_recent_first(site)
+    ]
     recent = site.sorted_tournaments[:20]
     index_tpl = env.get_template("index.html")
     written.append(_write(out, "index.html", index_tpl.render(
         site=site,
         recent_tournaments=recent,
         archetype_rows=archetype_rows,
+        format_rows=format_rows,
         meta_count=len(meta_pairs(site)),
         rel="",
         **ctx_common,
@@ -270,30 +299,77 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             out, f"tournois/{t.slug}/index.html", page
         ))
 
+    # --- une page par format (profondeur 2) --------------------------------
+    format_tpl = env.get_template("format.html")
+    for fslug in _formats_recent_first(site):
+        ts = fmts[fslug]
+        label = site.format_label(fslug)
+        # Archétypes de ce format, triés par nombre de listes décroissant.
+        fleaders = site.leaders(fslug)
+        f_arch_rows = sorted(
+            (
+                (aslug, site.archetype_label(aslug), len(pairs))
+                for aslug, pairs in fleaders.items()
+            ),
+            key=lambda r: (-r[2], r[1]),
+        )
+        total_lists = sum(len(p) for p in fleaders.values())
+        page = format_tpl.render(
+            site=site,
+            format_slug=fslug,
+            format_label=label,
+            tournaments=ts,
+            total_lists=total_lists,
+            archetype_rows=f_arch_rows,
+            pack_url=f"/formats/{fslug}/deckpack.json",
+            rel="../../",
+            **ctx_common,
+        )
+        written.append(_write(out, f"formats/{fslug}/index.html", page))
+
     # --- une page par archétype (parsé, profondeur 2) ----------------------
+    # Cloisonnée par format : un cœur calculé sur deux formats mélangés décrit un
+    # deck qui n'a jamais existé (cf. SPEC § « Contenu des pages » / leaders).
+    # On appelle donc `core_cards` sur `site.leaders(fslug)[aslug]`, jamais sur
+    # `site.leaders()[aslug]`.
     leader_tpl = env.get_template("leader.html")
     for aslug, pairs in leaders.items():
         pack_url = f"/leaders/{aslug}/deckpack.json"
         label = site.archetype_label(aslug)
-        core = core_cards(pairs)
-        show_diff = len(pairs) >= MIN_LISTS_FOR_DIFF and bool(core)
-        core_items = (
-            sorted(core.items(), key=lambda c: (-c[1], c[0])) if show_diff else None
-        )
-        # Liste unifiée (t, d, delta) : delta est vide quand pas de vue par écart.
-        deck_rows = tuple(
-            (t, d, deck_delta(d, core) if show_diff else ())
-            for t, d in pairs
-        )
+        # Une section par format où l'archétype est présent, du plus récent au
+        # plus ancien. Chaque section porte sa propre commande d'import (vers
+        # `<fslug>.json`), son propre cœur et ses propres écarts.
+        sections: list[dict] = []
+        for fslug in _formats_recent_first(site):
+            f_pairs = site.leaders(fslug).get(aslug)
+            if not f_pairs:
+                continue
+            f_core = core_cards(f_pairs)
+            f_show_diff = len(f_pairs) >= MIN_LISTS_FOR_DIFF and bool(f_core)
+            f_core_items = (
+                sorted(f_core.items(), key=lambda c: (-c[1], c[0]))
+                if f_show_diff else None
+            )
+            f_deck_rows = tuple(
+                (t, d, deck_delta(d, f_core) if f_show_diff else ())
+                for t, d in f_pairs
+            )
+            sections.append({
+                "fslug": fslug,
+                "label": site.format_label(fslug),
+                "pairs": f_pairs,
+                "core": f_core,
+                "core_items": f_core_items,
+                "show_diff": f_show_diff,
+                "deck_rows": f_deck_rows,
+                "pack_url": f"/leaders/{aslug}/{fslug}.json",
+            })
         page = leader_tpl.render(
             site=site,
             archetype_slug=aslug,
             archetype_label=label,
             pairs=pairs,
-            deck_rows=deck_rows,
-            core=core,
-            core_items=core_items,
-            show_diff=show_diff,
+            sections=sections,
             deck_size=DECK_SIZE,
             pack_url=pack_url,
             rel="../../",

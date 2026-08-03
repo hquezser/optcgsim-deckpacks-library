@@ -140,3 +140,27 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .intro h1 { margin: 0 0 0.25rem; }
 .intro p { color: var(--muted); }
 .meta-link { background: var(--code-bg); padding: 0.75rem 1rem; border-radius: 0.4rem; }
+
+/* Formats (axe de navigation) */
+.formats { margin-bottom: 1rem; }
+.format-list { list-style: none; padding: 0; }
+.format-list li { border-bottom: 1px solid var(--line); }
+.format-list a {
+  display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem;
+  align-items: baseline; padding: 0.5rem 0;
+}
+.f-label { font-weight: 600; }
+.f-count { color: var(--muted); font-size: 0.85rem; margin-left: auto; }
+.t-format {
+  color: var(--accent); font-size: 0.8rem; font-weight: 600;
+  background: var(--import-bg); padding: 0.05rem 0.4rem; border-radius: 0.2rem;
+}
+
+/* Sections par format sur /leaders/ */
+.format-section { margin-bottom: 2rem; }
+.format-section > h2 {
+  border-bottom: 2px solid var(--accent); padding-bottom: 0.25rem;
+}
+.import-compact { padding: 0.5rem 0.75rem; border-width: 1px; }
+.import-compact .import-title { display: none; }
+.import-compact .import-help { margin: 0 0 0.25rem; font-size: 0.85rem; }

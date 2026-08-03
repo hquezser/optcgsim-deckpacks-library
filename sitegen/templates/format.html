@@ -1,0 +1,26 @@
+{% extends "_base.html" %}
+{% block title %}{{ format_label }} — OPTCGSim deckpacks{% endblock %}
+{% block content %}
+
+{% include "_import.html" %}
+
+<section class="page-head">
+  <h1>{{ format_label }}</h1>
+  <p class="page-meta">{{ tournaments | length }} tournoi(s) — {{ total_lists }} liste(s).</p>
+</section>
+
+<section class="archetypes">
+  <h2>Archétypes — par nombre de listes décroissant</h2>
+  <ul class="archetype-list">
+    {% for aslug, label, count in archetype_rows %}
+    <li>
+      <a href="{{ rel }}leaders/{{ aslug }}/">
+        <span class="a-label">{{ label }}</span>
+        <span class="a-count">{{ count }} liste(s)</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% endblock %}

@@ -6,67 +6,81 @@
 
 <section class="page-head">
   <h1>{{ archetype_label }}</h1>
-  <p class="page-meta">{{ pairs | length }} liste(s) — tous tournois confondus.</p>
+  <p class="page-meta">{{ pairs | length }} liste(s) — tous tournois confondus,
+    {{ sections | length }} format(s).</p>
 </section>
 
-{% if show_diff %}
-<section class="core-section">
-  <details class="core-cards">
-    <summary>Cœur commun — {{ core_items | length }} cartes
-      <span class="core-hint">(présent dans ≥ 80 % des listes)</span></summary>
-    <ul class="card-list">
-      {% for card_id, qty in core_items %}
-      <li><code>{{ qty }}x {{ card_id }}</code></li>
+{% for section in sections %}
+<section class="format-section">
+  <h2>{{ section.label }}</h2>
+
+  <section class="import-block import-compact">
+    <p class="import-help">Importer ce format seul dans
+      <a href="https://github.com/hquezser/optcgsim-studio" rel="noreferrer nofollow"
+        target="_blank">optcgsim-studio</a>.</p>
+    <pre class="import-cmd"><code>{{ import_command(base_url, section.pack_url) }}</code></pre>
+  </section>
+
+  {% if section.show_diff %}
+  <section class="core-section">
+    <details class="core-cards">
+      <summary>Cœur commun — {{ section.core_items | length }} cartes
+        <span class="core-hint">(présent dans ≥ 80 % des listes)</span></summary>
+      <ul class="card-list">
+        {% for card_id, qty in section.core_items %}
+        <li><code>{{ qty }}x {{ card_id }}</code></li>
+        {% endfor %}
+      </ul>
+    </details>
+  </section>
+  {% endif %}
+
+  <section class="decks">
+    <h3>{{ section.pairs | length }} liste(s) — par date décroissante</h3>
+    <ol class="deck-list">
+      {% for t, d, delta in section.deck_rows %}
+      <li class="deck" id="{{ section.fslug }}-{{ d.slug }}">
+        <details class="deck-details"{% if loop.first %} open{% endif %}>
+          <summary class="deck-summary">
+            <span class="d-place">{{ d.placement | ordinal }}</span>
+            <span class="d-player">{{ d.player }}</span>
+            <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
+              — {{ d.total_cards }}/{{ deck_size }} cartes</span>
+            {% if section.show_diff %}<span class="d-delta-tag">{{ delta | length }} d'écart</span>{% endif %}
+          </summary>
+          <p class="d-provenance">
+            <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
+            — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+          </p>
+          <div class="deck-body">
+            {% if section.show_diff %}
+            <p class="d-delta-size">{{ delta | length }} carte(s) d'écart</p>
+            {% if delta %}
+            <ul class="card-list">
+              {% for card_id, qty_deck, qty_core in delta %}
+              <li class="{% if qty_core == 0 %}d-add{% else %}d-adjust{% endif %}">
+                <code>{{ qty_deck }}x {{ card_id }}</code>
+                {% if qty_core > 0 %}<span class="d-core-qty">(cœur {{ qty_core }}x)</span>{% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="d-delta-zero">Identique au cœur commun.</p>
+            {% endif %}
+            {% else %}
+            <ul class="card-list">
+              {% for card_id, qty in d.cards | sort_cards %}
+              <li><code>{{ qty }}x {{ card_id }}</code></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </details>
+      </li>
       {% endfor %}
-    </ul>
-  </details>
+    </ol>
+  </section>
 </section>
-{% endif %}
-
-<section class="decks">
-  <h2>Listes par date décroissante</h2>
-  <ol class="deck-list">
-    {% for t, d, delta in deck_rows %}
-    <li class="deck" id="{{ d.slug }}">
-      <details class="deck-details"{% if loop.first %} open{% endif %}>
-        <summary class="deck-summary">
-          <span class="d-place">{{ d.placement | ordinal }}</span>
-          <span class="d-player">{{ d.player }}</span>
-          <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
-            — {{ d.total_cards }}/{{ deck_size }} cartes</span>
-          {% if show_diff %}<span class="d-delta-tag">{{ delta | length }} d'écart</span>{% endif %}
-        </summary>
-        <p class="d-provenance">
-          <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
-          — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
-        </p>
-        <div class="deck-body">
-          {% if show_diff %}
-          <p class="d-delta-size">{{ delta | length }} carte(s) d'écart</p>
-          {% if delta %}
-          <ul class="card-list">
-            {% for card_id, qty_deck, qty_core in delta %}
-            <li class="{% if qty_core == 0 %}d-add{% else %}d-adjust{% endif %}">
-              <code>{{ qty_deck }}x {{ card_id }}</code>
-              {% if qty_core > 0 %}<span class="d-core-qty">(cœur {{ qty_core }}x)</span>{% endif %}
-            </li>
-            {% endfor %}
-          </ul>
-          {% else %}
-          <p class="d-delta-zero">Identique au cœur commun.</p>
-          {% endif %}
-          {% else %}
-          <ul class="card-list">
-            {% for card_id, qty in d.cards | sort_cards %}
-            <li><code>{{ qty }}x {{ card_id }}</code></li>
-            {% endfor %}
-          </ul>
-          {% endif %}
-        </div>
-      </details>
-    </li>
-    {% endfor %}
-  </ol>
-</section>
+{% endfor %}
 
 {% endblock %}

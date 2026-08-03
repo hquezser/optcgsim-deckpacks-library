@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .model import BuildWarning, Deck, Site, Tournament
 
-__all__ = ["parse_deck_name", "parse_text", "load_site"]
+__all__ = ["parse_deck_name", "parse_text", "load_site", "parse_format"]
 
 
 # Nom de deck : séparateur = tiret cadratin U+2014, entouré d'espaces.
@@ -31,6 +31,34 @@ _LINE_RE = re.compile(r"^(\d+)\s*x\s*([A-Za-z0-9][A-Za-z0-9-]*)$")
 
 # Préfixe de slug de tournoi : `2026-07-04-regional-bielefeld` -> date.
 _SLUG_DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})")
+
+# Format depuis le nom de pack : `"OP14.5 21st March 2026 - ..."` -> `OP14.5`.
+# Source primaire : on conserve la casse et le point tels qu'écrits. Insensible à
+# la casse pour rester robuste face à un scraper qui écrirait `op16` en tête, mais
+# on retourne le texte original (le préfixe « porte la casse »).
+_FORMAT_NAME_RE = re.compile(r"^OP\d+(?:\.\d+)?", re.IGNORECASE)
+
+# Format depuis un tag de deck : `op16`, `op14.5`. Le tag `op` nu (cas réel
+# ChinoizeCupStats) ne matche pas — il faut au moins un chiffre. Normalisé en
+# majuscules au retour (c'est la source secondaire, elle ne porte pas la casse).
+_FORMAT_TAG_RE = re.compile(r"^op\d+(?:\.\d+)?$", re.IGNORECASE)
+
+
+def parse_format(pack_name: str, tags: tuple[str, ...]) -> str:
+    """Le format (« la méta ») du tournoi : « OP16 », « OP14.5 »… "" si indéterminable.
+
+    Source primaire : le préfixe du nom de pack (porte la casse et le point).
+    Source secondaire : un tag de deck `op\\d+(\\.\\d+)?`, normalisé en majuscules.
+    Ne devine jamais : un tournoi non classé vaut mieux qu'un tournoi mal classé.
+    """
+    m = _FORMAT_NAME_RE.match(pack_name)
+    if m:
+        return m.group(0)
+    for tag in tags:
+        mt = _FORMAT_TAG_RE.fullmatch(tag)
+        if mt:
+            return mt.group(0).upper()
+    return ""
 
 
 def parse_deck_name(name: str) -> tuple[str, str, int | None]:
@@ -128,6 +156,17 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
             tags=tags,
         ))
 
+    # Format du tournoi : source primaire = préfixe du nom de pack. À défaut,
+    # premier deck (ordre source) portant un tag de format. "" si rien ne matche
+    # — on ne devine jamais (le tag `op` nu de ChinoizeCupStats reste muet).
+    fmt = parse_format(name, ())
+    if not fmt:
+        for raw in raw_decks:
+            deck_tags = tuple(raw.get("tags", []) or [])
+            fmt = parse_format("", deck_tags)
+            if fmt:
+                break
+
     tournament = Tournament(
         slug=slug,
         name=name,
@@ -135,6 +174,7 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
         description=description,
         author=author,
         decks=tuple(decks),
+        format=fmt,
     )
     return tournament, warnings
 

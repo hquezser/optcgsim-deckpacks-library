@@ -38,6 +38,13 @@ def expected_paths(site) -> set[str]:
     for aslug in site.leaders():
         out.add(f"leaders/{aslug}/index.html")
         out.add(f"leaders/{aslug}/deckpack.json")
+    # Vues par format : un archétype n'a de pack restreint que pour les formats où il a
+    # au moins une liste — sinon on attendrait des fichiers vides.
+    for fslug in site.formats():
+        out.add(f"formats/{fslug}/index.html")
+        out.add(f"formats/{fslug}/deckpack.json")
+        for aslug in site.leaders(fslug):
+            out.add(f"leaders/{aslug}/{fslug}.json")
     return out
 
 

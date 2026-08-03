@@ -5,8 +5,27 @@
 <section class="intro">
   <h1>Tournois récents</h1>
   <p>Une rampe d'accès entre le méta compétitif et OPTCGSim : chaque page expose une
-    commande <code>studio decks import-pack</code> copiable en un geste.</p>
+    commande <code>studio decks import-pack</code> copiable en un geste, à coller dans
+    <a href="https://github.com/hquezser/optcgsim-studio" rel="noreferrer nofollow"
+      target="_blank">optcgsim-studio</a>.</p>
 </section>
+
+{% if format_rows %}
+<section class="formats">
+  <h2>Formats</h2>
+  <p>Le format (« la méta ») est le premier repère qu'un joueur cherche.</p>
+  <ul class="format-list">
+    {% for fslug, label, n_tour, n_lists in format_rows %}
+    <li>
+      <a href="{{ rel }}formats/{{ fslug }}/">
+        <span class="f-label">{{ label }}</span>
+        <span class="f-count">{{ n_tour }} tournoi(s) · {{ n_lists }} liste(s)</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 
 <section class="meta-link">
   <h2>Méta courant</h2>
@@ -22,6 +41,7 @@
       <a href="{{ rel }}tournois/{{ t.slug }}/">
         <span class="t-name">{{ t.name }}</span>
         <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+        {% if t.format %}<span class="t-format">{{ t.format }}</span>{% endif %}
         <span class="t-count">{{ t.decks | length }} deck(s)</span>
       </a>
     </li>

@@ -41,10 +41,16 @@ def meta_pairs(site: Site) -> tuple[tuple[Tournament, Deck], ...]:
     if ref is None:
         return ()
 
+    # Ancrage au format courant : une fenêtre de dates seule peut chevaucher un
+    # changement de format et mélanger deux environnements de jeu sans le signaler.
+    current_format = site.current_format
+
     start = ref - timedelta(days=META_WINDOW_DAYS)
     candidates: list[tuple[Tournament, Deck]] = []
     for t in site.tournaments:
         if t.date is None or t.date < start or t.date > ref:
+            continue
+        if current_format and t.format_slug != current_format:
             continue
         for d in t.decks:
             if not d.parsed:
@@ -132,6 +138,36 @@ def write_packs(site: Site, out: Path) -> list[Path]:
         path = out / "leaders" / aslug / "deckpack.json"
         _dump(
             build_pack(name=site.archetype_label(aslug), pairs=pairs),
+            path,
+        )
+        written.append(path)
+
+    # 2.bis Par archétype restreint à un format : un fichier <fslug>.json par format
+    #     où l'archétype a au moins une liste. `Site.leaders(format_slug)` fait le
+    #     filtrage — ne pas le réimplémenter. Les formats indéterminés (slug vide)
+    #     ne produisent aucun fichier.
+    for fslug in site.formats():
+        for aslug, pairs in site.leaders(fslug).items():
+            path = out / "leaders" / aslug / f"{fslug}.json"
+            _dump(
+                build_pack(
+                    name=f"{site.archetype_label(aslug)} — {site.format_label(fslug)}",
+                    pairs=pairs,
+                ),
+                path,
+            )
+            written.append(path)
+
+    # 3. Par format : tous les decks du format. Les formats indéterminés (slug vide)
+    #    sont exclus par `Site.formats()` elle-même.
+    for fslug, tournaments in site.formats().items():
+        pairs: list[tuple[Tournament, Deck]] = []
+        for t in tournaments:
+            for d in t.decks:
+                pairs.append((t, d))
+        path = out / "formats" / fslug / "deckpack.json"
+        _dump(
+            build_pack(name=site.format_label(fslug), pairs=tuple(pairs)),
             path,
         )
         written.append(path)
