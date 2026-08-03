@@ -14,6 +14,7 @@ import re
 from datetime import date
 from pathlib import Path
 
+from . import formats
 from .model import BuildWarning, Deck, Site, Tournament
 
 __all__ = ["parse_deck_name", "parse_text", "load_site", "parse_format"]
@@ -156,9 +157,12 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
             tags=tags,
         ))
 
-    # Format du tournoi : source primaire = préfixe du nom de pack. À défaut,
-    # premier deck (ordre source) portant un tag de format. "" si rien ne matche
-    # — on ne devine jamais (le tag `op` nu de ChinoizeCupStats reste muet).
+    # Format du tournoi, trois sources dans l'ordre (cf. SPEC § « Format ») :
+    #   1. préfixe du nom de pack (porte la casse et le point) ;
+    #   2. tag de deck `op\d+(\.\d+)?` normalisé en majuscules ;
+    #   3. à défaut, déduction depuis le pool de cartes (borne inférieure : un
+    #      tournoi ne peut pas être antérieur au set le plus récent qu'il joue).
+    # L'étiquette explicite gagne toujours sur la déduction — on ne l'écrase pas.
     fmt = parse_format(name, ())
     if not fmt:
         for raw in raw_decks:
@@ -166,6 +170,15 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
             fmt = parse_format("", deck_tags)
             if fmt:
                 break
+    if not fmt:
+        # Troisième source : le pool de cartes du tournoi entier. Les tournois
+        # ChinoizeCupStats ne portent ni préfixe ni tag de format (leur seul tag
+        # est « op » nu) : c'est ce qui les classe, via ST31/32/33 -> OP16.5.
+        pool: set[str] = set()
+        for raw in raw_decks:
+            pool.update(formats.sets_in_text(raw.get("text", "") or ""))
+        if pool:
+            fmt = formats.infer_format(tuple(sorted(pool)))
 
     tournament = Tournament(
         slug=slug,
@@ -199,5 +212,20 @@ def load_site(packs_dir: Path) -> Site:
         tournament, w = _load_tournament(pack_dir)
         tournaments.append(tournament)
         warnings.extend(w)
+
+    # Un avertissement unique pour tout le corpus : les sets que `formats` ne sait
+    # pas dater. Sans ça, l'apparition d'un nouveau set passerait inaperçue et
+    # fausserait les déductions de format en silence. Collecté sur l'ensemble des
+    # decklists, une fois, plutôt que par tournoi — c'est un signal global.
+    corpus_pool: set[str] = set()
+    for t in tournaments:
+        for d in t.decks:
+            corpus_pool.update(formats.sets_in_text(d.text))
+    unknown = formats.unknown_sets(tuple(sorted(corpus_pool)))
+    if unknown:
+        warnings.append(BuildWarning(
+            scope="corpus",
+            message=f"sets non datés dans formats.FORMAT_OF_SET : {', '.join(unknown)}",
+        ))
 
     return Site(tournaments=tuple(tournaments), warnings=tuple(warnings))
