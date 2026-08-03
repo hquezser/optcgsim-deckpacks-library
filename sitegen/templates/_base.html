@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}OPTCGSim deckpacks{% endblock %}</title>
-  <link rel="stylesheet" href="{% if base_url %}{{ base_url }}{% endif %}/style.css">
+  <link rel="stylesheet" href="{{ rel }}style.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="site-home" href="{{ base_url }}/">OPTCGSim deckpacks</a>
+    <a class="site-home" href="{{ rel }}index.html">OPTCGSim deckpacks</a>
     <nav>
-      <a href="{{ base_url }}/">Tournois</a>
-      <a href="{{ base_url }}/meta/">Méta</a>
+      <a href="{{ rel }}index.html">Tournois</a>
+      <a href="{{ rel }}meta/">Méta</a>
     </nav>
   </header>
 

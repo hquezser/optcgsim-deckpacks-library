@@ -50,9 +50,27 @@ Fichiers à produire (l'ensemble exact est vérifié) :
 | `leaders/<aslug>/deckpack.json` | toutes les listes de cet archétype, tous tournois |
 | `meta/deckpack.json` | l'instantané du méta courant |
 
+### Nouveaux packs : par format (« la méta »)
+
+Le format d'un tournoi est désormais dans `Tournament.format` / `.format_slug`
+(`OP14.5` → `op14-5`), et `Site.formats()` regroupe les tournois par format.
+
+| Chemin | Contenu |
+|---|---|
+| `formats/<fslug>/deckpack.json` | tous les decks de ce format |
+| `leaders/<aslug>/<fslug>.json` | les listes d'un archétype **dans ce format seul** |
+
+N'émets un `leaders/<aslug>/<fslug>.json` que si l'archétype a **au moins une liste** dans
+ce format — pas de fichier vide. `Site.leaders(format_slug)` fait déjà le filtrage, ne le
+réimplémente pas. Les formats indéterminés (`format_slug == ""`) ne produisent aucun
+fichier.
+
 Règles du pack méta — **déterministes, ne jamais utiliser la date du jour** :
 
 - Date de référence = `site.reference_date` (le tournoi le plus récent du corpus).
+- **Restreindre aussi à `site.current_format`.** Une fenêtre de dates seule peut chevaucher
+  un changement de format et mélangerait alors deux environnements de jeu sans que rien ne
+  le signale. Le corpus actuel n'y échappe que par chance.
 - Garder les decks des tournois dans les `META_WINDOW_DAYS` jours précédant cette
   référence, avec `placement <= 8` et `deck.parsed` vrai.
 - Trier par date de tournoi décroissante puis placement croissant.

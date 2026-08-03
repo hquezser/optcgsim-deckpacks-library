@@ -37,7 +37,7 @@
           {% if show_diff %}<span class="d-delta-tag">{{ delta | length }} d'écart</span>{% endif %}
         </summary>
         <p class="d-provenance">
-          <a href="{{ base_url }}/tournois/{{ t.slug }}/">{{ t.name }}</a>
+          <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
           — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
         </p>
         <div class="deck-body">

@@ -66,6 +66,24 @@ pas échouer.
 **Cartes** — lignes suivantes, `4xOP15-061` → `("OP15-061", 4)`, dans l'ordre du fichier,
 leader exclu.
 
+**Format (« la méta »)** — `OP15`, `OP16`, `OP16.5`, `OP17`… C'est une propriété du
+**tournoi**, pas du deck : tous les decks d'un pack partagent le même environnement de jeu.
+Deux sources, dans cet ordre :
+
+1. le **préfixe du nom de pack** (`"OP14.5 21st March 2026 - Regional Melbourne"` → `OP14.5`),
+   qui porte la casse et le point ;
+2. à défaut, un **tag** de deck de la forme `op\d+(\.\d+)?` (`op16`, `op14.5`), normalisé en
+   majuscules.
+
+`""` si aucune des deux ne donne rien — les tournois de ChinoizeCupStats sont dans ce cas
+aujourd'hui (leur seul tag est `op`). Un format inconnu **exclut** le tournoi des vues par
+format : mieux vaut ne pas le classer que le ranger au hasard.
+
+Le format est la condition de justesse de toute vue agrégée. Un cœur commun calculé sur
+deux formats mélangés décrit un deck qui n'a jamais existé : mesuré sur le corpus,
+`green-mihawk` et `red-blue-ace` affichaient un cœur de 6 et 10 cartes qui disparaissait
+entièrement dès qu'on restreignait au format dominant.
+
 **Slug** (fonction unique, réutilisée partout) : minuscules, toute suite de caractères
 non alphanumériques → `-`, tirets de tête/queue retirés.
 `"Purple Enel"` → `purple-enel` · `"Red/Black Koby"` → `red-black-koby` ·
@@ -77,16 +95,23 @@ Si `placement is None` : `f"xx-{slug(raw_name)}"`.
 ## Carte des URLs (contrat exact)
 
 ```
-/index.html                                    tournois récents + index des leaders
+/index.html                                    tournois récents + formats + index des leaders
 /tournois/<tslug>/index.html                   un tournoi : ses decks
 /tournois/<tslug>/deckpack.json                le pack complet du tournoi
 /tournois/<tslug>/decks/<dslug>.json           un deck seul, en pack d'un élément
-/leaders/<aslug>/index.html                    toutes les listes de cet archétype
-/leaders/<aslug>/deckpack.json                 pack : toutes ses listes
+/formats/<fslug>/index.html                    les archétypes d'un format (« la méta »)
+/formats/<fslug>/deckpack.json                 pack : tout ce format
+/leaders/<aslug>/index.html                    les listes de cet archétype, par format
+/leaders/<aslug>/deckpack.json                 pack : toutes ses listes, tous formats
+/leaders/<aslug>/<fslug>.json                  pack : ses listes dans ce format seul
 /meta/index.html                               instantané du méta courant
 /meta/deckpack.json                            pack : le méta courant
 /style.css                                     feuille unique, ~200 lignes max
 ```
+
+`<fslug>` est le format slugifié (`OP14.5` → `op14-5`). Seuls les formats connus produisent
+des fichiers ; un `<aslug>` n'a de `<fslug>.json` que pour les formats où il a au moins une
+liste.
 
 Aucune autre URL. Pas de `404.html`, pas de sitemap en v1.
 
@@ -97,6 +122,9 @@ Tout `deckpack.json` émis doit passer `../optcgsim-deckpacks/scripts/validate.p
 Déterministe et testable — **ne pas utiliser la date du jour** :
 
 - Date de référence = date du tournoi le plus récent du corpus.
+- **Restreindre au format courant** (`Site.current_format`) en plus de la fenêtre de dates.
+  Une fenêtre seule peut chevaucher un changement de format : elle mélangerait alors deux
+  environnements en silence. Le corpus actuel n'y échappe que par chance.
 - Retenir les decks des tournois dans les **60 jours** précédant cette référence,
   `placement <= 8`, `archetype != ""`.
 - Trier par date de tournoi décroissante, puis placement croissant.
@@ -131,8 +159,10 @@ le CSS qui fournit le geste de copie.
 Le bloc mentionne **optcgsim-studio par un lien** : un visiteur qui découvre le site ne sait
 pas ce qu'est cette commande ni où obtenir l'outil qui l'exécute.
 
-- **`/`** : les 20 tournois les plus récents (nom, date, nombre de decks, lien) ; la liste
-  des archétypes avec leur nombre de listes, décroissant ; un lien vers `/meta/`.
+- **`/`** : les formats connus en tête (du plus récent au plus ancien, avec leur nombre de
+  tournois et de listes) — c'est le premier repère qu'un joueur cherche ; puis les 20
+  tournois les plus récents (nom, date, **format**, nombre de decks, lien) ; puis les
+  archétypes avec leur nombre de listes, décroissant ; et un lien vers `/meta/`.
 - **`/tournois/<tslug>/`** : bloc import du pack complet. Puis les decks triés par
   placement croissant (non parsés en fin de liste) ; par deck : placement, archétype,
   joueur, leader, la liste des cartes, et sa commande d'import individuelle.
@@ -163,8 +193,16 @@ programme.
 
 Rendu en texte simple contigu (`1st`, `2nd`, `11th`), **sans `<sup>`** : la mise en exposant
 produisait un espace visible (« 1 st ») qui se lit comme une coquille.
-- **`/leaders/<aslug>/`** : bloc import. Puis les listes de cet archétype, tous tournois,
-  triées par date décroissante puis placement ; chaque entrée indique son tournoi.
+- **`/formats/<fslug>/`** : bloc import du format entier. Puis ses archétypes triés par
+  nombre de listes décroissant, avec le nombre de tournois couverts et la période.
+  C'est l'équivalent statique du sélecteur de méta des sites de référence.
+- **`/leaders/<aslug>/`** : bloc import. Puis **une section par format**, du plus récent au
+  plus ancien, chacune avec son propre cœur commun, ses écarts et sa propre commande
+  d'import (`<fslug>.json`). Les listes y sont triées par date décroissante puis placement ;
+  chaque entrée indique son tournoi.
+
+  Le cloisonnement par format est une exigence de **justesse**, pas de présentation :
+  agréger deux formats fabrique un cœur qui ne correspond à aucun deck réel.
 - **`/meta/`** : bloc import. La composition du pack méta, groupée par archétype.
 
 Pas de nom de carte affiché — **uniquement des IDs**. C'est un invariant, pas un manque

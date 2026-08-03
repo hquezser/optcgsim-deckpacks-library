@@ -24,7 +24,7 @@
           <span class="d-place">{{ d.placement | ordinal }}</span>
           <span class="d-archetype">
             {% if d.archetype %}
-              <a href="{{ base_url }}/leaders/{{ d.archetype_slug }}/">{{ d.archetype }}</a>
+              <a href="{{ rel }}leaders/{{ d.archetype_slug }}/">{{ d.archetype }}</a>
             {% else %}
               <span class="d-raw">{{ d.raw_name }}</span>
             {% endif %}

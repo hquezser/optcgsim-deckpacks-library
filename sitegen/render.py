@@ -216,13 +216,16 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     env = _env(templates_dir)
 
     written: list[Path] = []
+    # `base_url` n'est utilisé QUE pour la commande d'import affichée (qui doit rester
+    # absolue, collable telle quelle dans un terminal). Tous les liens internes et la
+    # feuille de style sont relatifs au document via `rel` (préfixe `../` × profondeur).
     ctx_common = {"base_url": base_url}
 
     # --- style.css ----------------------------------------------------------
     style_tpl = env.get_template("style.css")
     written.append(_write(out, "style.css", style_tpl.render(**ctx_common)))
 
-    # --- index.html ---------------------------------------------------------
+    # --- index.html (profondeur 0) -----------------------------------------
     leaders = site.leaders()  # dict trié par aslug
     archetype_rows = [
         (aslug, site.archetype_label(aslug), len(pairs))
@@ -237,10 +240,11 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         recent_tournaments=recent,
         archetype_rows=archetype_rows,
         meta_count=len(meta_pairs(site)),
+        rel="",
         **ctx_common,
     )))
 
-    # --- une page par tournoi ----------------------------------------------
+    # --- une page par tournoi (profondeur 2) -------------------------------
     tournoi_tpl = env.get_template("tournoi.html")
     for t in site.sorted_tournaments:
         pack_url = f"/tournois/{t.slug}/deckpack.json"
@@ -259,13 +263,14 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             decks=decks_sorted,
             pack_url=pack_url,
             deck_size=DECK_SIZE,
+            rel="../../",
             **ctx_common,
         )
         written.append(_write(
             out, f"tournois/{t.slug}/index.html", page
         ))
 
-    # --- une page par archétype (parsé) ------------------------------------
+    # --- une page par archétype (parsé, profondeur 2) ----------------------
     leader_tpl = env.get_template("leader.html")
     for aslug, pairs in leaders.items():
         pack_url = f"/leaders/{aslug}/deckpack.json"
@@ -291,11 +296,12 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             show_diff=show_diff,
             deck_size=DECK_SIZE,
             pack_url=pack_url,
+            rel="../../",
             **ctx_common,
         )
         written.append(_write(out, f"leaders/{aslug}/index.html", page))
 
-    # --- meta ---------------------------------------------------------------
+    # --- meta (profondeur 1) ------------------------------------------------
     meta_tpl = env.get_template("meta.html")
     meta = meta_pairs(site)
     # Groupage par archétype, tri par nombre de listes décroissant puis libellé.
@@ -318,6 +324,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         meta_pairs=meta,
         meta_groups=meta_groups,
         pack_url="/meta/deckpack.json",
+        rel="../",
         **ctx_common,
     )
     written.append(_write(out, "meta/index.html", page))

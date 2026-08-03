@@ -88,10 +88,16 @@ class Tournament:
     description: str
     author: str
     decks: tuple[Deck, ...]
+    format: str = ""             # « OP16 », « OP14.5 »… "" si indéterminable
 
     @property
     def parsed_decks(self) -> tuple[Deck, ...]:
         return tuple(d for d in self.decks if d.parsed)
+
+    @property
+    def format_slug(self) -> str:
+        """« OP14.5 » -> « op14-5 ». "" si le format est inconnu."""
+        return slugify(self.format) if self.format else ""
 
 
 @dataclass(frozen=True)
@@ -122,14 +128,56 @@ class Site:
         dates = [t.date for t in self.tournaments if t.date]
         return max(dates) if dates else None
 
-    def leaders(self) -> dict[str, tuple[tuple[Tournament, Deck], ...]]:
+    def formats(self) -> dict[str, tuple[Tournament, ...]]:
+        """format_slug -> tournois de ce format, du plus récent au plus ancien.
+
+        Le format (« la méta ») est l'axe de navigation que servent tous les sites de
+        référence, et il est surtout la condition de justesse des vues agrégées : un cœur
+        commun calculé sur deux formats mélangés décrit un deck qui n'a jamais existé.
+        Les tournois de format indéterminé sont EXCLUS — mieux vaut ne pas les classer que
+        les ranger au hasard.
+        """
+        out: dict[str, list[Tournament]] = {}
+        for t in self.sorted_tournaments:
+            if t.format_slug:
+                out.setdefault(t.format_slug, []).append(t)
+        return {k: tuple(v) for k, v in sorted(out.items())}
+
+    @property
+    def current_format(self) -> str:
+        """format_slug du tournoi le plus récent. "" si indéterminable.
+
+        Sert d'ancre au pack « méta » : une simple fenêtre de dates peut chevaucher un
+        changement de format et mélanger deux environnements sans que rien ne le signale.
+        """
+        for t in self.sorted_tournaments:
+            if t.format_slug:
+                return t.format_slug
+        return ""
+
+    def format_label(self, format_slug: str) -> str:
+        """Libellé d'origine d'un format (« op14-5 » -> « OP14.5 »)."""
+        for t in self.tournaments:
+            if t.format_slug == format_slug:
+                return t.format
+        return format_slug
+
+    def leaders(self, format_slug: str | None = None
+                ) -> dict[str, tuple[tuple[Tournament, Deck], ...]]:
         """archetype_slug -> ((tournoi, deck), ...) trié par date décroissante, placement.
 
         Renvoie les decks appariés à leur tournoi : une page /leaders/ doit citer la
         provenance de chaque liste, c'est toute sa valeur de preuve.
+
+        `format_slug` restreint à un seul format. C'est le paramètre à utiliser dès qu'on
+        agrège (cœur commun, écarts) : mélanger deux formats produit un cœur qui ne
+        correspond à aucun deck réel. Sans lui, on obtient tout le corpus — utile pour un
+        inventaire, pas pour une moyenne.
         """
         out: dict[str, list[tuple[Tournament, Deck]]] = {}
         for t in self.tournaments:
+            if format_slug is not None and t.format_slug != format_slug:
+                continue
             for d in t.parsed_decks:
                 out.setdefault(d.archetype_slug, []).append((t, d))
         return {

@@ -14,7 +14,7 @@
   <h2>Composition par archétype</h2>
   {% for aslug, label, pairs in meta_groups %}
   <section class="meta-group">
-    <h3><a href="{{ base_url }}/leaders/{{ aslug }}/">{{ label }}</a>
+    <h3><a href="{{ rel }}leaders/{{ aslug }}/">{{ label }}</a>
       <span class="a-count">{{ pairs | length }} liste(s)</span></h3>
     <ol class="deck-list compact">
       {% for t, d in pairs %}
@@ -26,7 +26,7 @@
             <span class="d-leader-id">leader <code>{{ d.leader_id }}</code></span>
           </summary>
           <p class="d-provenance">
-            <a href="{{ base_url }}/tournois/{{ t.slug }}/">{{ t.name }}</a>
+            <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
             — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
           </p>
           <div class="deck-body">

@@ -10,7 +10,7 @@
 
 <section class="meta-link">
   <h2>Méta courant</h2>
-  <p><a href="{{ base_url }}/meta/">Voir le pack méta</a>
+  <p><a href="{{ rel }}meta/">Voir le pack méta</a>
     — {{ meta_count }} liste(s) sélectionnée(s) sur les 60 derniers jours.</p>
 </section>
 
@@ -19,7 +19,7 @@
   <ol class="tournament-list">
     {% for t in recent_tournaments %}
     <li>
-      <a href="{{ base_url }}/tournois/{{ t.slug }}/">
+      <a href="{{ rel }}tournois/{{ t.slug }}/">
         <span class="t-name">{{ t.name }}</span>
         <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
         <span class="t-count">{{ t.decks | length }} deck(s)</span>
@@ -35,7 +35,7 @@
   <ul class="archetype-list">
     {% for aslug, label, count in archetype_rows %}
     <li>
-      <a href="{{ base_url }}/leaders/{{ aslug }}/">
+      <a href="{{ rel }}leaders/{{ aslug }}/">
         <span class="a-label">{{ label }}</span>
         <span class="a-count">{{ count }} liste(s)</span>
       </a>

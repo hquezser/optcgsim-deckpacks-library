@@ -104,6 +104,50 @@ def test_write_packs_meta_nomme_avec_la_date_de_reference(written):
     assert len(pack["decks"]) == 2
 
 
+def test_meta_ancre_au_format_courant(site):
+    """Une fenêtre de dates seule peut chevaucher un changement de format.
+
+    Fixture : réf = 2026-07-04 (OP16). Le tournoi d'avril est OP15 ET hors fenêtre — donc
+    exclu deux fois. Ce test verrouille l'ancrage au format, pas seulement à la date.
+    """
+    assert site.current_format == "op16"
+    pairs = packs.meta_pairs(site)
+    assert {t.format_slug for t, _ in pairs} == {"op16"}
+
+
+def test_meta_exclut_un_autre_format_dans_la_fenetre(site):
+    """Le cas que la fenêtre seule laisserait passer : même mois, format différent."""
+    from datetime import date
+
+    from sitegen.model import Site, Tournament
+    recent = next(t for t in site.tournaments if t.slug.endswith("bielefeld"))
+    # Même semaine que la référence, mais format précédent.
+    intrus = Tournament("2026-07-02-intrus", "OP15 2nd July 2026 - Intrus",
+                        date(2026, 7, 2), "", "", recent.decks, format="OP15")
+    pairs = packs.meta_pairs(Site(tournaments=(recent, intrus)))
+    assert {t.format_slug for t, _ in pairs} == {"op16"}, \
+        "un tournoi d'un autre format dans la fenêtre doit être écarté"
+
+
+def test_write_packs_emet_les_packs_par_format(written):
+    out, paths = written
+    rel = {p.relative_to(out).as_posix() for p in paths}
+    assert "formats/op16/deckpack.json" in rel
+    assert "formats/op15/deckpack.json" in rel
+    # Pack d'un archétype restreint à un format : blue-doflamingo n'existe qu'en OP15.
+    assert "leaders/blue-doflamingo/op15.json" in rel
+    assert "leaders/blue-doflamingo/op16.json" not in rel, \
+        "pas de fichier pour un format où l'archétype n'a aucune liste"
+
+
+def test_pack_par_format_ne_contient_que_ce_format(written, site):
+    out, _ = written
+    pack = json.loads((out / "formats" / "op15" / "deckpack.json").read_text())
+    noms_op15 = {d.raw_name for t in site.tournaments if t.format_slug == "op15"
+                 for d in t.decks}
+    assert {e["name"] for e in pack["decks"]} == noms_op15
+
+
 def test_write_packs_est_deterministe(site, tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     packs.write_packs(site, a)

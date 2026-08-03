@@ -84,6 +84,37 @@ d'un examen du rendu réel en mobile 375 px — chacun a un test qui échoue auj
 6. **Supprime le `<sup>` du placement** : `1<sup>st</sup>` s'affiche « 1 st » et se lit comme
    une coquille. Rends `1st` en texte contigu.
 
+## Nouveau : le format (« la méta ») comme axe de navigation
+
+Tous les sites de référence (onepiecetopdecks, chinoizecupstats, limitless) offrent un
+sélecteur de méta : `OP15`, `OP16`, `OP16.5`, `OP17`. C'est le premier repère qu'un joueur
+cherche. Sans JS, l'équivalent statique est une rangée de liens.
+
+Le modèle fournit tout : `Tournament.format` / `.format_slug`, `Site.formats()`,
+`Site.current_format`, `Site.format_label(fslug)`, et **`Site.leaders(format_slug)`** qui
+restreint à un format.
+
+À produire :
+
+- **`/formats/<fslug>/index.html`** : bloc import du format entier
+  (`/formats/<fslug>/deckpack.json`, écrit par le lot C), puis les archétypes de ce format
+  triés par nombre de listes décroissant. Un archétype absent de ce format n'y figure pas.
+- **`/index.html`** : les formats connus **en tête**, du plus récent au plus ancien, avec
+  leur nombre de tournois et de listes, chacun lié à sa page. Et le format de chaque
+  tournoi dans la liste des tournois.
+- **`/leaders/<aslug>/index.html`** : **une section par format**, du plus récent au plus
+  ancien. Chaque section a son propre cœur commun, ses propres écarts, et sa propre commande
+  d'import pointant `/leaders/<aslug>/<fslug>.json`.
+
+**C'est une exigence de justesse, pas de présentation.** Un cœur commun calculé sur deux
+formats mélangés décrit un deck qui n'a jamais existé : mesuré sur le corpus réel,
+`green-mihawk` et `red-blue-ace` affichaient un cœur de 6 et 10 cartes qui disparaissait
+entièrement dès qu'on restreignait au format dominant. Appelle donc
+`archetype.core_cards()` sur `site.leaders(fslug)[aslug]`, **jamais** sur `site.leaders()[aslug]`.
+
+Les tournois de format indéterminé (ChinoizeCupStats aujourd'hui) n'apparaissent dans
+aucune page de format. Ils restent visibles sur leur propre page de tournoi et à l'accueil.
+
 ## Correctif de portabilité (test rouge)
 
 Les liens internes et la feuille de style sont aujourd'hui **absolus** contre `--base-url`

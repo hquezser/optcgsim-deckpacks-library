@@ -32,6 +32,8 @@ def test_emet_exactement_les_pages_du_contrat(built):
         "index.html",
         "style.css",
         "meta/index.html",
+        "formats/op15/index.html",
+        "formats/op16/index.html",
         "tournois/2026-07-04-regional-bielefeld/index.html",
         "tournois/2026-04-01-regional-ancien/index.html",
         "tournois/2026-04-15-treasure-cup-noyau/index.html",
@@ -235,6 +237,45 @@ def test_page_leader_montre_lecart(built):
         "une carte du cœur ne doit pas être répétée pour chaque liste"
     for hors_coeur in ("OP01-010", "OP01-011", "OP01-012", "OP01-013"):
         assert hors_coeur in page, f"{hors_coeur} est un écart, il doit rester visible"
+
+
+def test_index_annonce_les_formats(built):
+    """Le format est le premier repère qu'un joueur cherche : « on est en quelle méta ? »."""
+    out, _ = built
+    page = _html(out, "index.html")
+    assert "OP16" in page and "OP15" in page
+    assert re.search(r"""href=["'][^"']*formats/op16/""", page), \
+        "les formats doivent être navigables depuis l'accueil"
+
+
+def test_page_format_liste_ses_archetypes(built):
+    out, _ = built
+    page = _html(out, "formats/op15/index.html")
+    assert "OP15" in page
+    assert "Blue Doflamingo" in page, "l'archétype OP15 de la fixture doit y figurer"
+    assert "studio decks import-pack" in page
+    # Un archétype qui n'existe qu'en OP16 n'a rien à faire sur la page OP15.
+    assert "Red/Black Koby" not in page
+
+
+def test_page_leader_cloisonne_par_format(built):
+    """Exigence de justesse : un cœur calculé sur deux formats décrit un deck fictif.
+
+    purple-enel a une liste en OP16 et une en OP15 dans la fixture : la page doit les
+    présenter séparément, pas les fondre.
+    """
+    out, _ = built
+    page = _html(out, "leaders/purple-enel/index.html")
+    assert "OP16" in page and "OP15" in page
+    i16, i15 = page.find("OP16"), page.find("OP15")
+    assert 0 < i16 < i15, "les formats doivent aller du plus récent au plus ancien"
+
+
+def test_page_leader_import_par_format(built):
+    """Chaque section de format porte sa propre commande, restreinte à ce format."""
+    out, _ = built
+    page = _html(out, "leaders/blue-doflamingo/index.html")
+    assert f"studio decks import-pack {BASE}/leaders/blue-doflamingo/op15.json" in page
 
 
 def test_page_leader_sous_le_seuil_reste_complete(built):

@@ -36,7 +36,24 @@ def parse_text(text: str) -> tuple[str, tuple[tuple[str, int], ...]]
 
 def load_site(packs_dir: Path) -> Site
     """Lit packs_dir/*/deckpack.json -> Site. Lève OSError/ValueError si un pack est illisible."""
+
+def parse_format(pack_name: str, tags: tuple[str, ...]) -> str
+    """Le format (« la méta ») du tournoi : « OP16 », « OP14.5 »… "" si indéterminable."""
 ```
+
+### Extraction du format (nouveau)
+
+Le format est une propriété du **tournoi** — tous les decks d'un pack partagent le même
+environnement. `load_site` doit renseigner `Tournament.format`. Deux sources, dans cet ordre :
+
+1. le **préfixe du nom de pack** : `"OP14.5 21st March 2026 - Regional Melbourne"` → `OP14.5`.
+   C'est la source primaire, elle porte la casse et le point ;
+2. à défaut, un **tag** de deck de la forme `op\d+(\.\d+)?` (`op16`, `op14.5`), à normaliser
+   en majuscules. Prends les tags du premier deck qui en porte un.
+
+`""` si aucune ne donne rien. Attention au piège réel : les tournois ChinoizeCupStats
+portent un tag `op` **nu**, qui ne désigne aucun format — il ne doit pas matcher. Ne devine
+jamais un format : un tournoi non classé est préférable à un tournoi mal classé.
 
 Points d'attention, tous couverts par les tests :
 

@@ -64,6 +64,56 @@ def test_leaders_regroupe_et_exclut_les_non_parses():
         ("2026-07-04-r", "Récent"), ("2026-04-01-v", "Vieux")]
 
 
+def _t(slug, d, fmt, decks=()):
+    return Tournament(slug, slug, d, "", "", decks, format=fmt)
+
+
+def test_format_slug_normalise_le_point():
+    assert _t("x", None, "OP14.5").format_slug == "op14-5"
+    assert _t("x", None, "OP16").format_slug == "op16"
+    assert _t("x", None, "").format_slug == ""
+
+
+def test_formats_regroupe_et_exclut_les_inconnus():
+    a = _t("2026-07-04-a", date(2026, 7, 4), "OP16")
+    b = _t("2026-04-01-b", date(2026, 4, 1), "OP15")
+    c = _t("2026-05-01-c", date(2026, 5, 1), "")      # format indéterminé -> exclu
+    site = Site(tournaments=(a, b, c))
+    fmts = site.formats()
+    assert list(fmts) == ["op15", "op16"]             # clés triées
+    assert [t.slug for t in fmts["op16"]] == ["2026-07-04-a"]
+    assert "2026-05-01-c" not in {t.slug for v in fmts.values() for t in v}
+
+
+def test_current_format_suit_le_tournoi_le_plus_recent():
+    a = _t("2026-07-04-a", date(2026, 7, 4), "OP16")
+    b = _t("2026-04-01-b", date(2026, 4, 1), "OP15")
+    assert Site(tournaments=(b, a)).current_format == "op16"
+    # Un tournoi plus récent SANS format ne doit pas masquer le format courant.
+    c = _t("2026-08-01-c", date(2026, 8, 1), "")
+    assert Site(tournaments=(b, a, c)).current_format == "op16"
+    assert Site(tournaments=()).current_format == ""
+
+
+def test_format_label_restitue_la_casse_et_le_point():
+    t = _t("x", date(2026, 3, 21), "OP14.5")
+    assert Site(tournaments=(t,)).format_label("op14-5") == "OP14.5"
+
+
+def test_leaders_filtre_par_format():
+    """C'est le paramètre qui rend un cœur commun honnête : sans lui on moyenne deux métas."""
+    d16 = _deck(player="Récent")
+    d15 = _deck(player="Ancien", placement=2)
+    a = _t("2026-07-04-a", date(2026, 7, 4), "OP16", (d16,))
+    b = _t("2026-04-01-b", date(2026, 4, 1), "OP15", (d15,))
+    site = Site(tournaments=(a, b))
+
+    assert len(site.leaders()["purple-enel"]) == 2                 # tout le corpus
+    assert [d.player for _, d in site.leaders("op16")["purple-enel"]] == ["Récent"]
+    assert [d.player for _, d in site.leaders("op15")["purple-enel"]] == ["Ancien"]
+    assert site.leaders("op99") == {}
+
+
 def test_archetype_label_retrouve_le_libelle():
     t = Tournament("2026-07-04-r", "R", date(2026, 7, 4), "", "", (_deck(),))
     assert Site(tournaments=(t,)).archetype_label("purple-enel") == "Purple Enel"

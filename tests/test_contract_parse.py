@@ -77,6 +77,34 @@ def test_load_site_derive_la_date_du_slug(site):
     assert biel.author == "limitlesstcg-scraper"
 
 
+def test_parse_format_depuis_le_nom_de_pack():
+    """Source primaire : le préfixe du nom, qui porte la casse et le point."""
+    assert parse.parse_format("OP14.5 21st March 2026 - Regional Melbourne", ()) == "OP14.5"
+    assert parse.parse_format("OP16 4th July 2026 - Regional Bielefeld", ()) == "OP16"
+
+
+def test_parse_format_repli_sur_les_tags():
+    """Source secondaire, normalisée en majuscules."""
+    assert parse.parse_format("CHINOIZECUP #200", ("meta", "op16", "2026")) == "OP16"
+    assert parse.parse_format("Tournoi sans préfixe", ("op14.5",)) == "OP14.5"
+
+
+def test_parse_format_inconnu_plutot_que_devine():
+    """`op` nu (cas réel de ChinoizeCupStats) ne désigne aucun format : ne rien inventer."""
+    assert parse.parse_format("CHINOIZECUP #200", ("meta", "online", "op", "2026")) == ""
+    assert parse.parse_format("", ()) == ""
+    assert parse.parse_format("Nom quelconque", ("meta", "Europe")) == ""
+
+
+def test_load_site_renseigne_le_format(site):
+    attendu = {
+        "2026-07-04-regional-bielefeld": "OP16",
+        "2026-04-01-regional-ancien": "OP15",
+        "2026-04-15-treasure-cup-noyau": "OP15",
+    }
+    assert {t.slug: t.format for t in site.tournaments} == attendu
+
+
 def test_load_site_conserve_le_deck_non_parsable(site):
     biel = next(t for t in site.tournaments if t.slug.endswith("bielefeld"))
     assert len(biel.decks) == 3
