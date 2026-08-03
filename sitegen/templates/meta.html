@@ -30,7 +30,6 @@
             — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
           </p>
           <div class="deck-body">
-            <p class="d-leader">Leader : <code>{{ d.leader_id }}</code></p>
             <ul class="card-list">
               {% for card_id, qty in d.cards | sort_cards %}
               <li><code>{{ qty }}x {{ card_id }}</code></li>

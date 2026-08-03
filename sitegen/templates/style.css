@@ -113,6 +113,24 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .deck-import-single { margin-top: 0.5rem; }
 .deck-import-single summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
 
+/* Cœur commun et écarts (LOT E) */
+.core-section { margin: 1rem 0; }
+.core-cards {
+  padding: 0.5rem 0.75rem; background: var(--code-bg);
+  border: 1px solid var(--line); border-radius: 0.4rem;
+}
+.core-cards summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+.core-hint { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
+.d-delta-tag {
+  color: var(--accent); font-size: 0.8rem; font-weight: 600;
+  background: var(--import-bg); padding: 0.05rem 0.4rem; border-radius: 0.2rem;
+}
+.d-delta-size { margin: 0.25rem 0; font-size: 0.9rem; font-weight: 600; }
+.d-delta-zero { margin: 0.25rem 0; color: var(--muted); font-size: 0.85rem; font-style: italic; }
+.d-add > code { background: #e6f4ea; }
+.d-adjust > code { background: #fef3e6; }
+.d-core-qty { color: var(--muted); font-size: 0.75rem; margin-left: 0.25rem; }
+
 /* Méta */
 .meta-group { margin-bottom: 1.5rem; }
 .meta-group h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.25rem; }

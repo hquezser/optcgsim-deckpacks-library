@@ -30,13 +30,12 @@
             {% endif %}
           </span>
           {% if d.player %}<span class="d-player">{{ d.player }}</span>{% endif %}
-          <span class="d-leader-id">leader <code>{{ d.leader_id }}</code></span>
+          <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
+            — {{ d.total_cards }}/{{ deck_size }} cartes</span>
         </summary>
 
         {% if d.parsed %}
         <div class="deck-body">
-          <p class="d-leader">Leader : <code>{{ d.leader_id }}</code>
-            — {{ d.total_cards }} cartes hors leader.</p>
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
             <li><code>{{ qty }}x {{ card_id }}</code></li>
@@ -50,7 +49,6 @@
         {% else %}
         <div class="deck-body deck-unparsed">
           <p class="d-raw">Nom non structuré : <code>{{ d.raw_name }}</code></p>
-          <p class="d-leader">Leader : <code>{{ d.leader_id }}</code></p>
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
             <li><code>{{ qty }}x {{ card_id }}</code></li>

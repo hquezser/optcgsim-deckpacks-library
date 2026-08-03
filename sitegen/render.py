@@ -24,6 +24,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
+from .archetype import CORE_THRESHOLD, MIN_LISTS_FOR_DIFF, core_cards, deck_delta
 from .model import Deck, Site, Tournament
 
 __all__ = ["write_pages", "meta_pairs"]
@@ -34,6 +35,10 @@ __all__ = ["write_pages", "meta_pairs"]
 META_WINDOW_DAYS = 60
 META_MAX_DECKS = 40
 META_AUTHOR = "optcgsim-deckpacks-library"
+
+# Taille standard d'un deck One Piece (leader + 50 cartes). Affichée dans le summary pour
+# donner au joueur la taille de l'écart sans répéter le leader dans le corps.
+DECK_SIZE = 50
 
 
 def meta_pairs(site: Site) -> tuple[tuple[Tournament, Deck], ...]:
@@ -105,6 +110,28 @@ def linkify(text: str) -> Markup:
     return Markup("".join(out))
 
 
+# Libellés lisibles pour les sources connues du corpus. Une URL brute de 45 caractères
+# comme texte de lien n'est pas de l'attribution — « Limitless » dit en un mot ce que
+# l'URL dit en deux lignes. Les domaines inconnus retombent sur le second niveau.
+_DOMAIN_LABELS = {
+    "limitlesstcg": "Limitless",
+    "chinoizecupstats": "ChinoizeCupStats",
+}
+
+
+def _domain_label(url: str) -> str:
+    """Nom de site lisible dérivé du domaine d'une URL."""
+    m = re.match(r"https?://([^/]+)", url, re.IGNORECASE)
+    if not m:
+        return url
+    domain = m.group(1).lower()
+    for part in domain.split("."):
+        if part in _DOMAIN_LABELS:
+            return _DOMAIN_LABELS[part]
+    parts = domain.split(".")
+    return parts[-2].capitalize() if len(parts) >= 2 else domain
+
+
 def urls_only(text: str) -> Markup:
     """N'extrait que les URL de `text`, rendues en une ligne d'attribution compacte.
 
@@ -112,6 +139,7 @@ def urls_only(text: str) -> Markup:
     et expose des paramètres internes (`region=Europe`, `time=3months`). Seules les URL
     qu'il contient sont citées (cf. SPEC § « Contenu des pages » — l'attribution reste
     obligatoire, l'étaler ne l'est pas). URL dédupliquées en conservant l'ordre d'apparition.
+    Le libellé du lien est le nom du site (dérivé du domaine), pas l'URL brute.
     """
     if not text:
         return Markup("")
@@ -126,7 +154,7 @@ def urls_only(text: str) -> Markup:
             unique.append(url)
     links = [
         f'<a href="{escape(u)}" rel="noreferrer nofollow" '
-        f'target="_blank">{escape(u)}</a>'
+        f'target="_blank">{escape(_domain_label(u))}</a>'
         for u in unique
     ]
     return Markup(" · ".join(links))
@@ -230,6 +258,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             tournament=t,
             decks=decks_sorted,
             pack_url=pack_url,
+            deck_size=DECK_SIZE,
             **ctx_common,
         )
         written.append(_write(
@@ -241,11 +270,26 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     for aslug, pairs in leaders.items():
         pack_url = f"/leaders/{aslug}/deckpack.json"
         label = site.archetype_label(aslug)
+        core = core_cards(pairs)
+        show_diff = len(pairs) >= MIN_LISTS_FOR_DIFF and bool(core)
+        core_items = (
+            sorted(core.items(), key=lambda c: (-c[1], c[0])) if show_diff else None
+        )
+        # Liste unifiée (t, d, delta) : delta est vide quand pas de vue par écart.
+        deck_rows = tuple(
+            (t, d, deck_delta(d, core) if show_diff else ())
+            for t, d in pairs
+        )
         page = leader_tpl.render(
             site=site,
             archetype_slug=aslug,
             archetype_label=label,
             pairs=pairs,
+            deck_rows=deck_rows,
+            core=core,
+            core_items=core_items,
+            show_diff=show_diff,
+            deck_size=DECK_SIZE,
             pack_url=pack_url,
             **ctx_common,
         )
