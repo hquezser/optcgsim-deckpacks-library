@@ -42,10 +42,15 @@ Les champs structurés n'existent pas dans le format : ils sont encodés dans la
 **Nom de deck** — regex unique :
 
 ```
-^(?P<archetype>.+?)\s+—\s+(?P<player>.+?)\s+\((?P<place>\d+)(?:st|nd|rd|th)\)$
+^(?P<archetype>.+?)\s+—\s+(?P<player>.+?)\s+\((?P<place>\d+)(?:st|nd|rd|th)?\)$
 ```
 
 (le séparateur est un tiret cadratin U+2014, entouré d'espaces)
+
+Le suffixe ordinal est **optionnel** : Limitless écrit `(1st)`, ChinoizeCupStats écrit `(1)`.
+Exiger le suffixe rendait tout tournoi ChinoizeCup illisible — 0 deck parsé sur 4, donc absent
+des pages `/leaders/` et du pack méta. Un suffixe non anglais (`(1er)`) reste non conforme :
+le `?` rend le groupe facultatif, pas permissif.
 
 - Si ça matche : `archetype`, `player`, `placement` renseignés.
 - Si ça ne matche pas : `archetype=""`, `player=""`, `placement=None`, et

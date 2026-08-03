@@ -25,6 +25,11 @@ from sitegen import parse
      ("Red/Green Luffy & Ace", "Davide Ferrari", 4)),
     ("Purple Enel — Georgios Karapiperis (11th)",
      ("Purple Enel", "Georgios Karapiperis", 11)),
+    # ChinoizeCupStats numérote sans suffixe ordinal : sans cette tolérance, tous ses
+    # tournois étaient illisibles (0 deck parsé sur 4) et donc absents des vues agrégées.
+    ("Roronoa Zoro & Sanji — Krullzor (1)", ("Roronoa Zoro & Sanji", "Krullzor", 1)),
+    ("Monkey.D.Luffy — igordiasr (2)", ("Monkey.D.Luffy", "igordiasr", 2)),
+    ("Dracule Mihawk — mirkosp95 (3)", ("Dracule Mihawk", "mirkosp95", 3)),
 ])
 def test_parse_noms_conformes(name, attendu):
     assert parse.parse_deck_name(name) == attendu

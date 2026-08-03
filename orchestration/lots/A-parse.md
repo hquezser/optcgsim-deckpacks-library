@@ -42,6 +42,10 @@ Points d'attention, tous couverts par les tests :
 
 - Le séparateur du nom de deck est un **tiret cadratin U+2014** (`—`), pas un tiret court.
   Un tiret court doit être traité comme non conforme.
+- Le **suffixe ordinal du placement est optionnel** : Limitless écrit `(1st)`,
+  ChinoizeCupStats écrit `(1)`. Les deux doivent parser. Exiger le suffixe rendait tout
+  tournoi ChinoizeCup illisible (0 deck parsé sur 4). Attention à ne pas devenir permissif
+  pour autant : `(1er)` reste non conforme.
 - Le slug de tournoi est **le nom du dossier**, pas un champ du manifeste. La date se
   déduit d'un préfixe `AAAA-MM-JJ` sur ce slug ; `None` s'il n'y en a pas.
 - Un nom de deck non parsable ne fait **jamais** échouer le chargement : le deck est
