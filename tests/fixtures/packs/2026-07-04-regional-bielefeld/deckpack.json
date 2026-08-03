@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "name": "OP16 4th July 2026 - Regional Bielefeld",
+  "author": "limitlesstcg-scraper",
+  "description": "Top 3 from \"OP16 4th July 2026 - Regional Bielefeld\" (fixture réduite).",
+  "decks": [
+    {
+      "name": "Purple Enel — Luka Forjan (1st)",
+      "tags": ["meta", "2026", "Europe", "op16"],
+      "text": "1xOP15-058\n4xOP15-061\n4xOP15-067\n3xOP12-071\n2xOP10-067"
+    },
+    {
+      "name": "Red/Black Koby — Marc@@@1 (2nd)",
+      "tags": ["meta", "2026", "Europe", "op16"],
+      "text": "1xOP16-022\n4xOP16-025\n4xOP09-004\n2xST13-003"
+    },
+    {
+      "name": "Nom sans structure reconnaissable",
+      "tags": ["meta", "2026"],
+      "text": "1xOP11-041\n4xOP11-045\n3xOP07-098"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "name": "OP15 1st April 2026 - Regional Ancien",
+  "author": "limitlesstcg-scraper",
+  "description": "Tournoi hors fenêtre méta de 60 jours (fixture).",
+  "decks": [
+    {
+      "name": "Purple Enel — Vieux Joueur (1st)",
+      "tags": ["meta", "2026", "Europe", "op15"],
+      "text": "1xOP15-058\n4xOP15-061\n2xOP09-072"
+    },
+    {
+      "name": "Green/Blue Luffy — Autre Joueur (12th)",
+      "tags": ["meta", "2026", "Europe", "op15"],
+      "text": "1xOP12-061\n4xOP12-063\n3xOP15-066"
+    }
+  ]
+}
