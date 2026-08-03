@@ -23,7 +23,7 @@ __all__ = ["parse_deck_name", "parse_text", "load_site"]
 # Tiret court -> non conforme (cf. SPEC § « Règles de parsing »).
 _NAME_RE = re.compile(
     r"^(?P<archetype>.+?)\s+\u2014\s+(?P<player>.+?)\s+"
-    r"\((?P<place>\d+)(?:st|nd|rd|th)\)$"
+    r"\((?P<place>\d+)(?:st|nd|rd|th)?\)$"
 )
 
 # Une ligne de decklist : `1xOP15-058` -> (qty=1, id="OP15-058").
