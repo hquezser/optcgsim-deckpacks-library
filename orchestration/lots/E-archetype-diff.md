@@ -66,6 +66,17 @@ Sur `/leaders/<aslug>/`, quand l'archétype a au moins `MIN_LISTS_FOR_DIFF` list
 En dessous du seuil, garder l'affichage complet actuel — 9 archétypes sur 15 du corpus
 n'ont qu'une ou deux listes, un « écart » y serait du bruit.
 
+### 3. Deux redondances à supprimer au passage
+
+Repérées sur le rendu réel, elles ont chacune un test rouge :
+
+- **Le lien de source affiche l'URL brute comme texte** (« https://onepiece.limitlesstcg.com/decks/lists »,
+  45 caractères sur deux lignes en mobile). Libelle-le par le nom du site — « Limitless »,
+  « ChinoizeCupStats » — dérivé du domaine. Une URL brute n'est pas de l'attribution lisible.
+- **Le leader est affiché deux fois** : dans le `<summary>` du deck et dans une ligne
+  « Leader : OP15-058 — 50 cartes hors leader. » juste en dessous. Garde-le dans le
+  `<summary>` (avec le total de cartes) et supprime la ligne du corps.
+
 ## Interdits
 
 - Ne modifie **aucun** fichier figé : `SPEC-site-v1.md`, `AGENTS.md`, `sitegen/model.py`,

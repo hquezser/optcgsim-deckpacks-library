@@ -34,9 +34,11 @@ def test_emet_exactement_les_pages_du_contrat(built):
         "meta/index.html",
         "tournois/2026-07-04-regional-bielefeld/index.html",
         "tournois/2026-04-01-regional-ancien/index.html",
+        "tournois/2026-04-15-treasure-cup-noyau/index.html",
         "leaders/purple-enel/index.html",
         "leaders/red-black-koby/index.html",
         "leaders/green-blue-luffy/index.html",
+        "leaders/blue-doflamingo/index.html",
     }
     assert all(p.exists() for p in paths)
 
@@ -165,6 +167,50 @@ def test_placement_sans_exposant(built):
     page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
     assert "<sup" not in page.lower()
     assert "1st" in page
+
+
+def test_attribution_porte_un_libelle_lisible(built):
+    """Une URL brute de 45 caractères comme texte de lien n'est pas de l'attribution.
+
+    Le nom de la source (« Limitless ») dit en un mot ce que l'URL dit en deux lignes.
+    """
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    assert ">https://" not in page, "le texte du lien ne doit pas être l'URL brute"
+    assert re.search(r"<a\s[^>]*limitlesstcg[^>]*>[^<]*[Ll]imitless", page), \
+        "le lien de source doit être libellé par le nom du site"
+
+
+def test_pas_de_leader_en_double(built):
+    """Le `<summary>` porte déjà le leader : le répéter dans le corps est du bruit."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    assert "Leader :" not in page
+    premier = re.search(r"<summary[^>]*>(.*?)</summary>", page, re.DOTALL).group(1)
+    assert "OP15-058" in premier, "le summary doit porter le leader"
+    assert "50" in premier, "le summary doit porter le total de cartes"
+
+
+def test_page_leader_montre_lecart(built):
+    """LOT E — sur un archétype assez fourni, la page affiche les écarts, pas 5 listes
+    quasi identiques à lire l'une après l'autre."""
+    out, _ = built
+    page = _html(out, "leaders/blue-doflamingo/index.html")
+    assert "cœur" in page.lower() or "coeur" in page.lower(), \
+        "le cœur commun doit être nommé et affiché une seule fois"
+    assert re.search(r"\d+\s*carte", page), "la taille de l'écart doit être indiquée"
+    # Les cartes hors cœur restent visibles ; celles du cœur ne sont pas répétées 5 fois.
+    assert page.count("OP01-001") <= 2, \
+        "une carte du cœur ne doit pas être répétée pour chaque liste"
+    for hors_coeur in ("OP01-010", "OP01-011", "OP01-012", "OP01-013"):
+        assert hors_coeur in page, f"{hors_coeur} est un écart, il doit rester visible"
+
+
+def test_page_leader_sous_le_seuil_reste_complete(built):
+    """purple-enel n'a que 2 listes : pas de cœur, affichage complet conservé."""
+    out, _ = built
+    page = _html(out, "leaders/purple-enel/index.html")
+    assert "OP15-061" in page and "OP15-067" in page
 
 
 def test_page_leader_cite_la_provenance(built):

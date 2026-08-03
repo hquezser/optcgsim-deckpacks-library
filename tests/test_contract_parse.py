@@ -59,9 +59,10 @@ def test_parse_text_tolere_lignes_vides_et_espaces():
 # --- load_site -----------------------------------------------------------------------
 
 def test_load_site_lit_le_corpus_fixture(site):
-    assert len(site.tournaments) == 2
+    assert len(site.tournaments) == 3
     slugs = {t.slug for t in site.tournaments}
-    assert slugs == {"2026-07-04-regional-bielefeld", "2026-04-01-regional-ancien"}
+    assert slugs == {"2026-07-04-regional-bielefeld", "2026-04-01-regional-ancien",
+                     "2026-04-15-treasure-cup-noyau"}
 
 
 def test_load_site_derive_la_date_du_slug(site):

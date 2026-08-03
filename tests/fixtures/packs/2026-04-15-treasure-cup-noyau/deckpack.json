@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "name": "OP15 15th April 2026 - Treasure Cup Noyau",
+  "author": "limitlesstcg-scraper",
+  "description": "Fixture dédiée au calcul de cœur commun (lot E) : 5 listes d'un même archétype, conçues pour que le résultat soit vérifiable à la main. Volontairement HORS de la fenêtre méta de 60 jours pour ne pas perturber les tests du pack méta. Source: https://onepiece.limitlesstcg.com/tournaments/999",
+  "decks": [
+    {
+      "name": "Blue Doflamingo — Alpha (1st)",
+      "tags": ["meta", "2026"],
+      "text": "1xOP01-000\n4xOP01-001\n4xOP01-002\n3xOP01-003\n2xOP01-010"
+    },
+    {
+      "name": "Blue Doflamingo — Bravo (2nd)",
+      "tags": ["meta", "2026"],
+      "text": "1xOP01-000\n4xOP01-001\n4xOP01-002\n3xOP01-003\n2xOP01-011"
+    },
+    {
+      "name": "Blue Doflamingo — Charlie (3rd)",
+      "tags": ["meta", "2026"],
+      "text": "1xOP01-000\n4xOP01-001\n4xOP01-002\n2xOP01-003\n3xOP01-010"
+    },
+    {
+      "name": "Blue Doflamingo — Delta (4th)",
+      "tags": ["meta", "2026"],
+      "text": "1xOP01-000\n4xOP01-001\n4xOP01-002\n3xOP01-003\n1xOP01-012"
+    },
+    {
+      "name": "Blue Doflamingo — Echo (5th)",
+      "tags": ["meta", "2026"],
+      "text": "1xOP01-000\n4xOP01-001\n3xOP01-003\n4xOP01-013"
+    }
+  ]
+}

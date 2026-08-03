@@ -15,7 +15,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 ROOT="$PWD"
 
-LOT="${1:?usage: run-lot.sh <A|B|C|D> [tentatives]}"
+LOT="${1:?usage: run-lot.sh <A|B|C|D|E> [tentatives]}"
 MAX="${2:-4}"
 MODEL="${MODEL:-glm-5-2}"          # gratuit, 200K de contexte
 PY="python3"; [ -x .venv/bin/python ] && PY=.venv/bin/python
@@ -31,10 +31,12 @@ case "$LOT" in
      GATE="$PY -m pytest -q tests/test_contract_render.py" ;;
   C) SPEC="$ROOT/orchestration/lots/C-packs.md";  WORKDIR="$ROOT"
      GATE="$PY -m pytest -q tests/test_contract_packs.py" ;;
+  E) SPEC="$ROOT/orchestration/lots/E-archetype-diff.md"; WORKDIR="$ROOT"
+     GATE="$PY -m pytest -q tests/test_contract_archetype.py tests/test_contract_render.py" ;;
   D) SPEC="$ROOT/orchestration/lots/D-studio-json-url.md"
      WORKDIR="$ROOT/../optcgsim-studio"
      GATE="python3 -m pytest -q tests/test_packlib.py tests/test_deckpack.py" ;;
-  *) echo "lot inconnu : $LOT (attendu A, B, C ou D)"; exit 2 ;;
+  *) echo "lot inconnu : $LOT (attendu A, B, C, D ou E)"; exit 2 ;;
 esac
 
 [ -f "$SPEC" ] || { echo "spec introuvable : $SPEC"; exit 2; }
