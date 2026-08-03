@@ -17,10 +17,12 @@ Invariants respectés :
 
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup, escape
 
 from .model import Deck, Site, Tournament
 
@@ -67,6 +69,42 @@ def _import_command(base_url: str, pack_url: str) -> str:
     return f"studio decks import-pack {base_url}{pack_url}"
 
 
+# URL dans un texte libre — on capture le schéma + tout ce qui n'est pas espace.
+# On retire ensuite la ponctuation terminale susceptible d'appartenir au texte
+# environnant plutôt qu'à l'URL (point, virgule, parenthèse fermante...).
+_URL_RE = re.compile(r"(https?://[^\s<>'\"]+)", re.IGNORECASE)
+_URL_TRAIL = ".,;:!?)]}\"'"
+
+
+def linkify(text: str) -> Markup:
+    """Échappe `text` et rend les URL cliquables, sans envoyer de référent ni de poids SEO.
+
+    Seul le sous-ensemble URL devient une balise `<a>` ; le reste reste échappé. La balise
+    porte `rel="noreferrer nofollow"` et `target="_blank"` (cf. SPEC § « Contenu des pages »
+    et AGENTS.md : créditer la source est délibéré, mais sans exposer le visiteur).
+    """
+    if not text:
+        return Markup("")
+    out: list[str] = []
+    pos = 0
+    for m in _URL_RE.finditer(text):
+        if m.start() > pos:
+            out.append(escape(text[pos:m.start()]))
+        url = m.group(0)
+        while url and url[-1] in _URL_TRAIL:
+            url = url[:-1]
+        out.append(
+            f'<a href="{escape(url)}" rel="noreferrer nofollow" '
+            f'target="_blank">{escape(url)}</a>'
+        )
+        # On avance jusqu'à la fin de l'URL rognée : la ponctuation excédentaire
+        # appartient au texte environnant et réapparaîtra (échappée) au segment suivant.
+        pos = m.start() + len(url)
+    if pos < len(text):
+        out.append(escape(text[pos:]))
+    return Markup("".join(out))
+
+
 def _env(templates_dir: Path) -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(templates_dir)),
@@ -76,6 +114,7 @@ def _env(templates_dir: Path) -> Environment:
         keep_trailing_newline=True,
     )
     env.globals["import_command"] = _import_command
+    env.filters["linkify"] = linkify
     return env
 
 

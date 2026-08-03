@@ -57,6 +57,24 @@ def test_commande_import_presente_et_absolue(built):
     assert f"studio decks import-pack {BASE}/meta/deckpack.json" in _html(out, "meta/index.html")
 
 
+def test_bloc_import_avant_toute_prose(built):
+    """Le bloc import précède la description dans le document, sur toutes les pages.
+
+    Ce n'est pas un détail de mise en page : la commande d'import est la seule chose que ce
+    site offre et que Limitless n'offre pas. Une description de tournoi de plusieurs lignes
+    la repousserait sous la ligne de flottaison en mobile, c'est-à-dire hors de vue.
+    """
+    out, paths = built
+    for p in [q for q in paths if q.suffix == ".html"]:
+        text = p.read_text(encoding="utf-8")
+        i_import = text.find("studio decks import-pack")
+        if i_import < 0:
+            continue
+        i_desc = text.find("t-desc")
+        assert i_desc < 0 or i_import < i_desc, \
+            f"la description précède le bloc import dans {p.name}"
+
+
 def test_page_tournoi_montre_placements_joueurs_et_ids(built):
     out, _ = built
     page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")

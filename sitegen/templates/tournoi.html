@@ -9,7 +9,7 @@
     {% if tournament.author %}<span class="t-author">source : {{ tournament.author }}</span>{% endif %}
     <span class="t-count">{{ tournament.decks | length }} deck(s)</span>
   </p>
-  {% if tournament.description %}<p class="t-desc">{{ tournament.description }}</p>{% endif %}
+  {% if tournament.description %}<p class="t-desc">{{ tournament.description | linkify }}</p>{% endif %}
 </section>
 
 {% include "_import.html" %}
