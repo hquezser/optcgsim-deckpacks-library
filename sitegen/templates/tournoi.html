@@ -2,6 +2,8 @@
 {% block title %}{{ tournament.name }} — OPTCGSim deckpacks{% endblock %}
 {% block content %}
 
+{% include "_import.html" %}
+
 <section class="page-head">
   <h1>{{ tournament.name }}</h1>
   <p class="page-meta">
@@ -11,8 +13,6 @@
   </p>
   {% if tournament.description %}<p class="t-desc">{{ tournament.description | linkify }}</p>{% endif %}
 </section>
-
-{% include "_import.html" %}
 
 <section class="decks">
   <h2>Decks — par placement croissant</h2>

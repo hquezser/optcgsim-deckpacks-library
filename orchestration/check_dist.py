@@ -150,9 +150,44 @@ def check_packs_valid(dist: Path) -> list[str]:
     return errs
 
 
-def check_determinism(dist: Path) -> list[str]:
-    """Le build doit être reproductible : on compare dist/ à un second build."""
-    return []  # couvert par les tests de lot ; laissé explicite pour la traçabilité
+def check_studio_resolves(dist: Path) -> list[str]:
+    """Chaque deck publié doit être RÉELLEMENT importable par le studio.
+
+    Le validateur de la spec ne contrôle que la structure du manifeste — il a laissé passer
+    des decklists que le simulateur refuse (ex. `9xOP16-042`, alors que le jeu plafonne à 4
+    exemplaires). Or le site ne promet qu'une chose : un import en un clic. Publier un deck
+    qui n'importe pas casse précisément cette promesse, donc c'est un échec dur ici.
+
+    Ces défauts viennent du corpus scrapé en amont, pas du rendu : le correctif appartient
+    à `optcgsim-deckpacks-data`, mais il doit être VISIBLE à chaque build plutôt que
+    découvert par un utilisateur.
+    """
+    cli_root = ROOT.parent / "optcgsim-studio"
+    if not (cli_root / "studio" / "cli.py").is_file():
+        return [f"studio introuvable : {cli_root} — importabilité réelle non vérifiée"]
+
+    errs: list[str] = []
+    for pack_dir in sorted(p.parent for p in dist.rglob("deckpack.json")):
+        # Chemin ABSOLU obligatoire : le sous-processus tourne avec cwd = dépôt studio, un
+        # chemin relatif y désignerait autre chose (ou rien). Cette erreur a produit un faux
+        # vert : la CLI échouait sans émettre de ligne « ✗ », donc rien n'était détecté.
+        r = subprocess.run(
+            [sys.executable, "-m", "studio.cli", "decks", "validate-pack",
+             str(pack_dir.resolve())],
+            capture_output=True, text=True, cwd=str(cli_root))
+        lignes = (r.stdout + r.stderr).splitlines()
+        echecs = [ln.strip().lstrip("✗ ") for ln in lignes if ln.lstrip().startswith("✗")]
+        for e in echecs:
+            errs.append(f"{pack_dir.relative_to(dist).as_posix()} : {e}")
+
+        # Un code non nul SANS ligne « ✗ » signifie que la vérification n'a pas eu lieu —
+        # à distinguer absolument de « rien à signaler », sinon le contrôle se contente de
+        # ne rien voir et se déclare vert.
+        if r.returncode != 0 and not echecs:
+            errs.append(f"{pack_dir.relative_to(dist).as_posix()} : contrôle impossible "
+                        f"(code {r.returncode}) — "
+                        + " / ".join(lignes[-2:] or ["aucune sortie"]))
+    return errs
 
 
 def main(argv: list[str]) -> int:
@@ -172,6 +207,7 @@ def main(argv: list[str]) -> int:
         ("carte des URLs conforme au contrat", check_url_map(dist, site)),
         ("aucune requête réseau sortante", check_no_outbound(dist, base_url)),
         ("aucun contenu sous copyright", check_no_card_names(dist)),
+        ("importabilité réelle par le studio", check_studio_resolves(dist)),
     ]
 
     ko = 0
