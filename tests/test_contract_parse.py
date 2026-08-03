@@ -88,11 +88,13 @@ def test_load_site_remplit_deck_et_tags(site):
     assert enel.archetype == "Purple Enel"
     assert enel.player == "Luka Forjan"
     assert enel.leader_id == "OP15-058"
-    assert enel.cards == (("OP15-061", 4), ("OP15-067", 4), ("OP12-071", 3),
-                          ("OP10-067", 2))
+    # Ordre SOURCE, volontairement non trié dans la fixture : le tri par quantité est une
+    # affaire d'affichage (lot B), pas de parsing — et les packs doivent rester verbatim.
+    assert enel.cards == (("OP10-067", 2), ("OP15-061", 4), ("OP12-071", 3),
+                          ("OP15-067", 4))
     assert enel.tags == ("meta", "2026", "Europe", "op16")
     # `text` est conservé verbatim : c'est lui qu'on réexporte dans les packs dérivés.
-    assert enel.text.startswith("1xOP15-058\n4xOP15-061")
+    assert enel.text.startswith("1xOP15-058\n2xOP10-067")
 
 
 def test_load_site_est_deterministe(packs_dir):

@@ -109,14 +109,48 @@ studio decks import-pack https://<base-url>/<chemin>/deckpack.json
 
 L'URL de base vient de `--base-url` (défaut `http://localhost:8000`).
 
+**La commande doit être lisible et sélectionnable en entier, sans scroll horizontal.** Mesuré
+en mobile 375 px, elle était tronquée à 65 % derrière une barre de défilement de quelques
+millimètres — le seul élément qui justifie le site était donc inutilisable. Le contrat exige
+donc : retour à la ligne (`pre-wrap` + coupure de mot) pour que tout soit visible, et
+`user-select: all` pour qu'un clic unique sélectionne la commande entière. Sans JS : c'est
+le CSS qui fournit le geste de copie.
+
+Le bloc mentionne **optcgsim-studio par un lien** : un visiteur qui découvre le site ne sait
+pas ce qu'est cette commande ni où obtenir l'outil qui l'exécute.
+
 - **`/`** : les 20 tournois les plus récents (nom, date, nombre de decks, lien) ; la liste
   des archétypes avec leur nombre de listes, décroissant ; un lien vers `/meta/`.
 - **`/tournois/<tslug>/`** : bloc import du pack complet. Puis les decks triés par
   placement croissant (non parsés en fin de liste) ; par deck : placement, archétype,
   joueur, leader, la liste des cartes, et sa commande d'import individuelle.
-  La `description` du pack est affichée, et **les URL qu'elle contient sont rendues
-  cliquables** (`rel="noreferrer nofollow"`, `target="_blank"`) : c'est la provenance de la
-  donnée, et la créditer est un choix délibéré, pas un détail cosmétique.
+
+  **Chaque deck est replié dans un `<details>`** dont le `<summary>` porte placement,
+  archétype, joueur et leader ; le premier est `open`. Déplié, un tournoi faisait 8 écrans
+  de défilement en mobile, ce qui rendait la page inutilisable comme index. `<details>` est
+  natif : aucun JS.
+
+  **La `description` brute n'est pas affichée.** C'est un champ de métadonnées de scraper :
+  il répète le titre et expose des paramètres internes (`region=Europe, time=3months`).
+  Seules les **URL** qu'elle contient sont extraites et rendues en une ligne d'attribution
+  compacte (`rel="noreferrer nofollow"`, `target="_blank"`) — créditer la source reste
+  obligatoire, l'étaler ne l'est pas.
+
+### Affichage des cartes
+
+Les cartes d'un deck sont affichées **triées par quantité décroissante, puis par identifiant**.
+L'ordre du fichier source empêchait de comparer visuellement deux listes d'un même
+archétype, ce qui est précisément l'usage d'une page `/leaders/`. Les 4-of remontent en tête :
+c'est la colonne vertébrale du deck.
+
+Ce tri est **d'affichage uniquement**. `Deck.text` et les `deckpack.json` produits
+conservent l'ordre source verbatim — c'est un contrat de données consommé par un autre
+programme.
+
+### Placement
+
+Rendu en texte simple contigu (`1st`, `2nd`, `11th`), **sans `<sup>`** : la mise en exposant
+produisait un espace visible (« 1 st ») qui se lit comme une coquille.
 - **`/leaders/<aslug>/`** : bloc import. Puis les listes de cet archétype, tous tournois,
   triées par date décroissante puis placement ; chaque entrée indique son tournoi.
 - **`/meta/`** : bloc import. La composition du pack méta, groupée par archétype.

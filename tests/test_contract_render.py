@@ -84,6 +84,89 @@ def test_page_tournoi_montre_placements_joueurs_et_ids(built):
     assert "Nom sans structure reconnaissable" in page
 
 
+def test_commande_import_lisible_sans_scroll(built):
+    """P1 — la commande doit s'afficher en entier et se sélectionner d'un clic.
+
+    Mesuré en mobile 375 px avant correction : 297 px visibles sur 847 réels, soit 65 % de
+    la commande cachée derrière une barre de défilement de quelques millimètres. Le seul
+    élément qui justifie l'existence du site était donc inutilisable.
+    """
+    out, _ = built
+    css = _html(out, "style.css").replace(" ", "").replace("\n", "")
+    assert "user-select:all" in css, \
+        "sans user-select:all, copier la commande demande une sélection manuelle précise"
+    assert "pre-wrap" in css or "break-word" in css or "break-all" in css, \
+        "la commande doit revenir à la ligne au lieu de défiler horizontalement"
+    assert "white-space:nowrap" not in css
+
+
+def test_lien_vers_optcgsim_studio(built):
+    """P6 — un visiteur qui découvre le site ne sait pas ce qu'est cette commande."""
+    out, _ = built
+    for rel in ("index.html", "meta/index.html"):
+        page = _html(out, rel)
+        assert "optcgsim-studio" in page, f"aucune mention de l'outil dans {rel}"
+    assert re.search(r"""<a\s[^>]*href=["'][^"']*optcgsim-studio[^"']*["']""",
+                     _html(out, "index.html"), re.IGNORECASE), \
+        "optcgsim-studio doit être un lien, pas du texte mort"
+
+
+def test_description_brute_non_affichee(built):
+    """P2 — la description est un champ de scraper, pas de l'éditorial.
+
+    Elle répétait le titre et exposait les paramètres internes du scraper sur cinq lignes,
+    repoussant le premier deck à ~685 px du haut en mobile.
+    """
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    assert "region=Europe" not in page
+    assert "time=3months" not in page
+    assert "Scraped from" not in page
+    # …mais l'attribution reste obligatoire (cf. test_attribution_de_la_source).
+
+
+def test_decks_replies_dans_details(built):
+    """P3 — 16 decklists dépliées faisaient 8 écrans de défilement en mobile."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    # 3 decks dans la fixture, chacun replié, plus le premier ouvert.
+    assert page.count("<summary") >= 3, "chaque deck doit avoir un summary scannable"
+    assert re.search(r"<details[^>]*\sopen", page), "le premier deck doit être ouvert"
+    premier = re.search(r"<summary[^>]*>(.*?)</summary>", page, re.DOTALL)
+    assert premier and "Purple Enel" in premier.group(1) and "Luka Forjan" in premier.group(1), \
+        "le summary doit porter archétype et joueur pour être scannable replié"
+
+
+def test_cartes_triees_par_quantite_decroissante(built):
+    """P4 — l'ordre source empêchait de comparer deux listes du même archétype."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    bloc = page[page.find("OP15-058"):]
+    ordre = [(int(q), cid) for q, cid in re.findall(r"(\d+)x\s*(OP\d\d-\d\d\d)", bloc)][:4]
+    # Fixture Enel : 4xOP15-061, 4xOP15-067, 3xOP12-071, 2xOP10-067
+    assert ordre == sorted(ordre, key=lambda t: (-t[0], t[1])), \
+        f"cartes non triées par quantité décroissante puis id : {ordre}"
+
+
+def test_le_tri_daffichage_ne_touche_pas_les_packs(site, tmp_path):
+    """Le tri est cosmétique : `text` reste verbatim, c'est un contrat de données."""
+    from sitegen import packs
+    biel = next(t for t in site.tournaments if t.slug.endswith("bielefeld"))
+    enel = next(d for d in biel.decks if d.placement == 1)
+    pack = packs.build_pack("T", ((biel, enel),))
+    assert pack["decks"][0]["text"] == enel.text
+    # L'ordre SOURCE (non trié) survit au passage par le pack.
+    assert pack["decks"][0]["text"].startswith("1xOP15-058\n2xOP10-067\n4xOP15-061")
+
+
+def test_placement_sans_exposant(built):
+    """P6 — `1<sup>st</sup>` s'affichait « 1 st », lu comme une coquille."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    assert "<sup" not in page.lower()
+    assert "1st" in page
+
+
 def test_page_leader_cite_la_provenance(built):
     """Toute la valeur de preuve d'une page leader est dans la provenance des listes."""
     out, _ = built

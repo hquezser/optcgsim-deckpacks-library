@@ -57,6 +57,33 @@ Pages à produire (et **rien d'autre** — l'ensemble exact est vérifié) :
 Les `deckpack.json` sont produits par le lot C — **tu ne les écris pas**, tu pointes vers
 leurs URLs.
 
+## Exigences d'ergonomie (mesurées sur le rendu actuel, à corriger)
+
+Une première version de ce lot est déjà en place et fonctionne. Ces six points viennent
+d'un examen du rendu réel en mobile 375 px — chacun a un test qui échoue aujourd'hui.
+
+1. **La commande d'import était tronquée à 65 %** (297 px visibles sur 847 réels) derrière
+   une barre de défilement horizontal de quelques millimètres. C'est le seul élément qui
+   justifie l'existence du site. Corrige en CSS : retour à la ligne (`pre-wrap` +
+   `word-break`) pour que tout soit visible, et **`user-select: all`** pour qu'un clic
+   unique sélectionne la commande entière. Sans JS, c'est le CSS qui fournit le geste.
+2. **La description brute ne doit plus être affichée** : c'est un champ de métadonnées de
+   scraper, il répète le titre et expose des paramètres internes (`region=Europe`,
+   `time=3months`) sur cinq lignes. Extrais-en seulement les **URL**, et rends-les en une
+   ligne d'attribution compacte. L'attribution reste obligatoire (`rel="noreferrer nofollow"`).
+3. **Replie chaque deck dans un `<details>`** avec un `<summary>` portant placement,
+   archétype, joueur et leader ; le premier `open`. Une page tournoi faisait **8 écrans** de
+   défilement. `<details>` est natif : n'introduis aucun JS.
+4. **Trie les cartes par quantité décroissante puis par identifiant** à l'affichage. L'ordre
+   du fichier source empêche de comparer deux listes d'un même archétype, ce qui est
+   pourtant l'usage d'une page `/leaders/`. **Ce tri est d'affichage uniquement** : ne touche
+   pas à `sitegen/packs.py` ni à `Deck.text`, qui sont un contrat de données verbatim.
+5. **Lie `optcgsim-studio`** (https://github.com/hquezser/optcgsim-studio) : aujourd'hui
+   c'est du texte mort, et un visiteur qui découvre le site ne sait ni ce qu'est cette
+   commande ni où obtenir l'outil.
+6. **Supprime le `<sup>` du placement** : `1<sup>st</sup>` s'affiche « 1 st » et se lit comme
+   une coquille. Rends `1st` en texte contigu.
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).
