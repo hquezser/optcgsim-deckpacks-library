@@ -159,10 +159,29 @@ le CSS qui fournit le geste de copie.
 Le bloc mentionne **optcgsim-studio par un lien** : un visiteur qui découvre le site ne sait
 pas ce qu'est cette commande ni où obtenir l'outil qui l'exécute.
 
-- **`/`** : les formats connus en tête (du plus récent au plus ancien, avec leur nombre de
-  tournois et de listes) — c'est le premier repère qu'un joueur cherche ; puis les 20
-  tournois les plus récents (nom, date, **format**, nombre de decks, lien) ; puis les
-  archétypes avec leur nombre de listes, décroissant ; et un lien vers `/meta/`.
+- **`/`** : les formats en tête, **groupés par rôle** — c'est le premier repère qu'un joueur
+  cherche. Puis les 20 tournois les plus récents (nom, date, **format**, nombre de decks,
+  lien) ; puis les archétypes avec leur nombre de listes, décroissant ; et un lien vers
+  `/meta/`.
+
+### Rôles de format : courant, à venir, passés
+
+Le simulateur reçoit les sets avant le circuit papier, donc un format peut déjà être joué en
+ligne quand les tournois papier en sont encore au précédent — et il peut y en avoir
+**plusieurs** en avance à la fois (OP16.5 puis OP17).
+
+- **courant** = `Site.current_format`, le format du tournoi le plus récent. C'est ce que la
+  majorité joue, et c'est lui qui alimente `/meta/`.
+- **à venir** = `Site.upcoming_formats`, tous les formats postérieurs présents, du plus
+  proche au plus lointain.
+- **passés** = `Site.past_formats`, du plus récent au plus ancien.
+
+Ce sont des **rôles, pas des identités** : les formats gardent leurs codes réels (`OP16`,
+`OP16.5`, `OP17`) et leurs URLs `/formats/<fslug>/`. On annote, on ne renomme jamais — et on
+n'invente aucune URL du type `/formats/a-venir/`.
+
+Chaque page `/formats/<fslug>/` annonce son propre rôle : un visiteur qui y arrive
+directement doit savoir s'il regarde le méta courant ou un méta à venir.
 - **`/tournois/<tslug>/`** : bloc import du pack complet. Puis les decks triés par
   placement croissant (non parsés en fin de liste) ; par deck : placement, archétype,
   joueur, leader, la liste des cartes, et sa commande d'import individuelle.

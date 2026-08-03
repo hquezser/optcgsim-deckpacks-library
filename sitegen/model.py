@@ -162,6 +162,38 @@ class Site:
                 return t.format
         return format_slug
 
+    @property
+    def upcoming_formats(self) -> tuple[str, ...]:
+        """format_slugs POSTÉRIEURS au format courant, du plus proche au plus lointain.
+
+        Le simulateur reçoit les sets avant le circuit papier : un format peut donc être déjà
+        joué en ligne alors que les tournois papier en sont encore au précédent. Il peut y en
+        avoir **plusieurs** à la fois (OP16.5 puis OP17), d'où une liste ordonnée.
+
+        « Courant » et « à venir » sont des RÔLES, pas des identités : les formats gardent
+        leurs codes réels et leurs URLs. Rien ici n'invente d'étiquette.
+        """
+        from .formats import format_key
+
+        courant = format_key(self.format_label(self.current_format))
+        return tuple(sorted(
+            (f for f in self.formats()
+             if format_key(self.format_label(f)) > courant),
+            key=lambda f: format_key(self.format_label(f)),
+        ))
+
+    @property
+    def past_formats(self) -> tuple[str, ...]:
+        """format_slugs antérieurs au format courant, du plus récent au plus ancien."""
+        from .formats import format_key
+
+        courant = format_key(self.format_label(self.current_format))
+        return tuple(sorted(
+            (f for f in self.formats()
+             if format_key(self.format_label(f)) < courant),
+            key=lambda f: format_key(self.format_label(f)), reverse=True,
+        ))
+
     def leaders(self, format_slug: str | None = None
                 ) -> dict[str, tuple[tuple[Tournament, Deck], ...]]:
         """archetype_slug -> ((tournoi, deck), ...) trié par date décroissante, placement.

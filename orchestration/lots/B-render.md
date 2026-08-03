@@ -99,9 +99,25 @@ restreint à un format.
 - **`/formats/<fslug>/index.html`** : bloc import du format entier
   (`/formats/<fslug>/deckpack.json`, écrit par le lot C), puis les archétypes de ce format
   triés par nombre de listes décroissant. Un archétype absent de ce format n'y figure pas.
-- **`/index.html`** : les formats connus **en tête**, du plus récent au plus ancien, avec
-  leur nombre de tournois et de listes, chacun lié à sa page. Et le format de chaque
-  tournoi dans la liste des tournois.
+- **`/index.html`** : les formats **en tête**, groupés par rôle (voir ci-dessous), avec leur
+  nombre de tournois et de listes, chacun lié à sa page. Et le format de chaque tournoi dans
+  la liste des tournois.
+
+### Rôles : courant, à venir, passés
+
+Le simulateur reçoit les sets avant le circuit papier : un format peut donc être déjà joué en
+ligne quand les tournois papier en sont encore au précédent, et il peut y en avoir
+**plusieurs** en avance à la fois (OP16.5 puis OP17). Le modèle les fournit déjà :
+`Site.current_format`, `Site.upcoming_formats` (du plus proche au plus lointain) et
+`Site.past_formats`.
+
+Groupe-les sous ces trois rôles sur l'accueil, le courant d'abord, puis les à venir, puis les
+passés. Et fais annoncer à chaque page `/formats/<fslug>/` son propre rôle — un visiteur qui
+y arrive directement doit savoir s'il regarde le méta courant ou un méta à venir.
+
+**Ce sont des rôles, pas des identités.** Les formats gardent leurs codes réels (`OP16`,
+`OP16.5`, `OP17`) comme libellés affichés et leurs URLs `/formats/<fslug>/` inchangées.
+N'invente aucune étiquette ni aucune URL du type `/formats/a-venir/`, et ne renomme rien.
 - **`/leaders/<aslug>/index.html`** : **une section par format**, du plus récent au plus
   ancien. Chaque section a son propre cœur commun, ses propres écarts, et sa propre commande
   d'import pointant `/leaders/<aslug>/<fslug>.json`.

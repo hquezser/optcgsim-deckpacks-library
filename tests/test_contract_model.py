@@ -95,6 +95,40 @@ def test_current_format_suit_le_tournoi_le_plus_recent():
     assert Site(tournaments=()).current_format == ""
 
 
+def test_deux_metas_a_venir_sont_differenciees():
+    """Le simulateur peut être en avance de PLUSIEURS formats sur le papier.
+
+    Courant = format du tournoi le plus récent (ce que la majorité joue). À venir = tous les
+    formats postérieurs présents dans le corpus, du plus proche au plus lointain — ce sont
+    des rôles, les formats gardent leurs codes réels.
+    """
+    papier = _t("2026-07-26-papier", date(2026, 7, 26), "OP16")
+    sim1 = _t("2026-07-15-sim", date(2026, 7, 15), "OP16.5")
+    sim2 = _t("2026-07-20-sim2", date(2026, 7, 20), "OP17")
+    vieux = _t("2026-05-01-vieux", date(2026, 5, 1), "OP15")
+    site = Site(tournaments=(papier, sim1, sim2, vieux))
+
+    assert site.current_format == "op16"
+    assert site.upcoming_formats == ("op16-5", "op17")   # du plus proche au plus lointain
+    assert site.past_formats == ("op15",)
+
+
+def test_roles_vides_quand_il_n_y_a_qu_un_format():
+    t = _t("2026-07-26-x", date(2026, 7, 26), "OP16")
+    site = Site(tournaments=(t,))
+    assert site.current_format == "op16"
+    assert site.upcoming_formats == () and site.past_formats == ()
+
+
+def test_ordre_des_roles_est_numerique():
+    """OP9 ne doit pas passer pour postérieur à OP16 par comparaison textuelle."""
+    courant = _t("2026-07-26-a", date(2026, 7, 26), "OP16")
+    ancien = _t("2026-01-01-b", date(2026, 1, 1), "OP9")
+    site = Site(tournaments=(courant, ancien))
+    assert site.upcoming_formats == ()
+    assert site.past_formats == ("op9",)
+
+
 def test_format_label_restitue_la_casse_et_le_point():
     t = _t("x", date(2026, 3, 21), "OP14.5")
     assert Site(tournaments=(t,)).format_label("op14-5") == "OP14.5"

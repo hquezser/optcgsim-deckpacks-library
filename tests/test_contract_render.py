@@ -250,6 +250,40 @@ def test_index_annonce_les_formats(built):
         "les formats doivent être navigables depuis l'accueil"
 
 
+def test_index_distingue_courant_a_venir_et_passes(built):
+    """Trois rôles, mais les formats gardent leurs codes réels — on annote, on ne renomme pas.
+
+    Fixture : courant OP16 (tournoi le plus récent), à venir OP16.5 (tournoi en ligne joué
+    en avance), passé OP15.
+    """
+    out, _ = built
+    page = _html(out, "index.html")
+    for role in ("courant", "venir"):
+        assert role in page.lower(), f"le rôle « {role} » doit être nommé sur l'accueil"
+    # Les codes réels restent les identifiants affichés et liés.
+    assert "OP16.5" in page and "OP16" in page and "OP15" in page
+    assert re.search(r"""href=["'][^"']*formats/op16-5/""", page)
+
+    # Le format à venir doit être présenté APRÈS le courant, pas fondu dans la liste.
+    i_courant, i_venir = page.lower().find("courant"), page.lower().find("venir")
+    assert 0 < i_courant < i_venir
+
+
+def test_page_format_annonce_son_role(built):
+    """Un visiteur arrivant directement sur /formats/op16-5/ doit savoir où il est."""
+    out, _ = built
+    assert "venir" in _html(out, "formats/op16-5/index.html").lower()
+    assert "courant" in _html(out, "formats/op16/index.html").lower()
+
+
+def test_meta_reste_ancre_au_format_courant(built):
+    """`/meta/` sert l'instantané courant. Les formats à venir ont déjà leurs pages."""
+    out, _ = built
+    page = _html(out, "meta/index.html")
+    assert "OP16" in page
+    assert f"studio decks import-pack {BASE}/meta/deckpack.json" in page
+
+
 def test_page_format_liste_ses_archetypes(built):
     out, _ = built
     page = _html(out, "formats/op15/index.html")
