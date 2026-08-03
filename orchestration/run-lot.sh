@@ -43,6 +43,14 @@ esac
 PROMPT="$LOG_DIR/lot-$LOT.prompt.md"
 FEEDBACK=""
 
+# Portillon d'abord : un lot déjà vert ne doit pas consommer un appel de worker à
+# refaire du travail fait. C'est ce qui rend run-all.sh relançable après un échec
+# partiel, sans repartir de zéro.
+if ( cd "$WORKDIR" && eval "$GATE" ) >/dev/null 2>&1; then
+  echo "✓ lot $LOT déjà vert — rien à faire"
+  exit 0
+fi
+
 for tour in $(seq 1 "$MAX"); do
   echo "════════ lot $LOT — tentative $tour/$MAX (modèle $MODEL)"
 
