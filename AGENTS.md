@@ -20,6 +20,14 @@ Ce dépôt ne définit pas le format et ne scrape rien. Il **rend**.
   tournoi. Aucun nom de carte, aucun texte de carte, aucune image, aucun asset. Cet
   invariant est ce qui rend le projet publiable ; il n'est pas négociable pour du confort
   d'affichage.
+
+  **Exception unique et assumée : le libellé d'archétype.** On affiche « Purple Enel » et
+  non `OP15-058`, alors qu'« Enel » est un nom de carte. C'est une exception raisonnée, pas
+  un oubli : ce libellé est une **donnée de tournoi publique** produite en amont par
+  Limitless, au même titre que le nom du joueur ou son placement — et c'est le seul repère
+  humain de tout le site (`/leaders/op15-058/` serait illisible). L'exception s'arrête là :
+  les 50 autres cartes d'un deck restent des IDs, et rien n'autorise à introduire une table
+  ID→nom pour les nommer.
 - **Zéro monétisation** : pas de publicité, pas de tracker, pas d'analytics, pas de lien
   d'affiliation. Le projet est une contribution à l'écosystème, pas un produit.
 - **Zéro donnée utilisateur** : pas d'auth, pas de compte, pas de cookie, pas de

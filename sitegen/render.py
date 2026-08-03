@@ -105,6 +105,56 @@ def linkify(text: str) -> Markup:
     return Markup("".join(out))
 
 
+def urls_only(text: str) -> Markup:
+    """N'extrait que les URL de `text`, rendues en une ligne d'attribution compacte.
+
+    La `description` d'un pack est un champ de métadonnées de scraper : il répète le titre
+    et expose des paramètres internes (`region=Europe`, `time=3months`). Seules les URL
+    qu'il contient sont citées (cf. SPEC § « Contenu des pages » — l'attribution reste
+    obligatoire, l'étaler ne l'est pas). URL dédupliquées en conservant l'ordre d'apparition.
+    """
+    if not text:
+        return Markup("")
+    seen: set[str] = set()
+    unique: list[str] = []
+    for m in _URL_RE.finditer(text):
+        url = m.group(0)
+        while url and url[-1] in _URL_TRAIL:
+            url = url[:-1]
+        if url and url not in seen:
+            seen.add(url)
+            unique.append(url)
+    links = [
+        f'<a href="{escape(u)}" rel="noreferrer nofollow" '
+        f'target="_blank">{escape(u)}</a>'
+        for u in unique
+    ]
+    return Markup(" · ".join(links))
+
+
+def ordinal(n: int | None) -> str:
+    """Rendu contigu du placement : `1st`, `2nd`, `11th` — sans `<sup>`.
+
+    La mise en exposant produisait un espace visible (« 1 st ») lu comme une coquille
+    (cf. SPEC § « Placement »).
+    """
+    if n is None:
+        return "—"
+    suffix = "th"
+    if n % 100 not in (11, 12, 13):
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def sort_cards(cards) -> list:
+    """Tri d'affichage par quantité décroissante puis identifiant croissant.
+
+    Cosmétique uniquement — `Deck.text` et les `deckpack.json` conservent l'ordre source
+    (cf. SPEC § « Affichage des cartes » et test_le_tri_daffichage_ne_touche_pas_les_packs).
+    """
+    return sorted(cards, key=lambda c: (-c[1], c[0]))
+
+
 def _env(templates_dir: Path) -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(templates_dir)),
@@ -115,6 +165,9 @@ def _env(templates_dir: Path) -> Environment:
     )
     env.globals["import_command"] = _import_command
     env.filters["linkify"] = linkify
+    env.filters["urls_only"] = urls_only
+    env.filters["ordinal"] = ordinal
+    env.filters["sort_cards"] = sort_cards
     return env
 
 

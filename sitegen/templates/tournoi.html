@@ -11,7 +11,7 @@
     {% if tournament.author %}<span class="t-author">source : {{ tournament.author }}</span>{% endif %}
     <span class="t-count">{{ tournament.decks | length }} deck(s)</span>
   </p>
-  {% if tournament.description %}<p class="t-desc">{{ tournament.description | linkify }}</p>{% endif %}
+  {% if tournament.description %}<p class="t-source">Source : {{ tournament.description | urls_only }}</p>{% endif %}
 </section>
 
 <section class="decks">
@@ -19,52 +19,46 @@
   <ol class="deck-list">
     {% for d in decks %}
     <li class="deck" id="{{ d.slug }}">
-      <div class="deck-head">
-        {% if d.placement is not none %}
-        <span class="d-place">{{ d.placement }}<sup>
-          {% if d.placement % 100 in [11, 12, 13] %}th
-          {% elif d.placement % 10 == 1 %}st
-          {% elif d.placement % 10 == 2 %}nd
-          {% elif d.placement % 10 == 3 %}rd
-          {% else %}th{% endif %}</sup></span>
-        {% else %}
-        <span class="d-place d-place-xx">—</span>
-        {% endif %}
-        <span class="d-archetype">
-          {% if d.archetype %}
-            <a href="{{ base_url }}/leaders/{{ d.archetype_slug }}/">{{ d.archetype }}</a>
-          {% else %}
-            <span class="d-raw">{{ d.raw_name }}</span>
-          {% endif %}
-        </span>
-        {% if d.player %}<span class="d-player">{{ d.player }}</span>{% endif %}
-      </div>
+      <details class="deck-details"{% if loop.first %} open{% endif %}>
+        <summary class="deck-summary">
+          <span class="d-place">{{ d.placement | ordinal }}</span>
+          <span class="d-archetype">
+            {% if d.archetype %}
+              <a href="{{ base_url }}/leaders/{{ d.archetype_slug }}/">{{ d.archetype }}</a>
+            {% else %}
+              <span class="d-raw">{{ d.raw_name }}</span>
+            {% endif %}
+          </span>
+          {% if d.player %}<span class="d-player">{{ d.player }}</span>{% endif %}
+          <span class="d-leader-id">leader <code>{{ d.leader_id }}</code></span>
+        </summary>
 
-      {% if d.parsed %}
-      <div class="deck-body">
-        <p class="d-leader">Leader : <code>{{ d.leader_id }}</code>
-          — {{ d.total_cards }} cartes hors leader.</p>
-        <ul class="card-list">
-          {% for card_id, qty in d.cards %}
-          <li><code>{{ qty }}x {{ card_id }}</code></li>
-          {% endfor %}
-        </ul>
-        <details class="deck-import-single">
-          <summary>Importer ce deck seul</summary>
-          <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ tournament.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
-        </details>
-      </div>
-      {% else %}
-      <div class="deck-body deck-unparsed">
-        <p class="d-raw">Nom non structuré : <code>{{ d.raw_name }}</code></p>
-        <p class="d-leader">Leader : <code>{{ d.leader_id }}</code></p>
-        <ul class="card-list">
-          {% for card_id, qty in d.cards %}
-          <li><code>{{ qty }}x {{ card_id }}</code></li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
+        {% if d.parsed %}
+        <div class="deck-body">
+          <p class="d-leader">Leader : <code>{{ d.leader_id }}</code>
+            — {{ d.total_cards }} cartes hors leader.</p>
+          <ul class="card-list">
+            {% for card_id, qty in d.cards | sort_cards %}
+            <li><code>{{ qty }}x {{ card_id }}</code></li>
+            {% endfor %}
+          </ul>
+          <details class="deck-import-single">
+            <summary>Importer ce deck seul</summary>
+            <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ tournament.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
+          </details>
+        </div>
+        {% else %}
+        <div class="deck-body deck-unparsed">
+          <p class="d-raw">Nom non structuré : <code>{{ d.raw_name }}</code></p>
+          <p class="d-leader">Leader : <code>{{ d.leader_id }}</code></p>
+          <ul class="card-list">
+            {% for card_id, qty in d.cards | sort_cards %}
+            <li><code>{{ qty }}x {{ card_id }}</code></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </details>
     </li>
     {% endfor %}
   </ol>

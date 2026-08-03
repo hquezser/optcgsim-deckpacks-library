@@ -2,13 +2,13 @@
 {% block title %}{{ meta_name }} — OPTCGSim deckpacks{% endblock %}
 {% block content %}
 
+{% include "_import.html" %}
+
 <section class="page-head">
   <h1>{{ meta_name }}</h1>
   <p class="page-meta">{{ meta_pairs | length }} liste(s) — fenêtre 60 jours,
     placement ≤ 8, plafond 40.</p>
 </section>
-
-{% include "_import.html" %}
 
 <section class="meta-groups">
   <h2>Composition par archétype</h2>
@@ -19,27 +19,25 @@
     <ol class="deck-list compact">
       {% for t, d in pairs %}
       <li class="deck" id="meta-{{ aslug }}-{{ d.slug }}">
-        <div class="deck-head">
-          <span class="d-place">{{ d.placement }}<sup>
-            {% if d.placement % 100 in [11, 12, 13] %}th
-            {% elif d.placement % 10 == 1 %}st
-            {% elif d.placement % 10 == 2 %}nd
-            {% elif d.placement % 10 == 3 %}rd
-            {% else %}th{% endif %}</sup></span>
-          <span class="d-player">{{ d.player }}</span>
-        </div>
-        <p class="d-provenance">
-          <a href="{{ base_url }}/tournois/{{ t.slug }}/">{{ t.name }}</a>
-          — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
-        </p>
-        <div class="deck-body">
-          <p class="d-leader">Leader : <code>{{ d.leader_id }}</code></p>
-          <ul class="card-list">
-            {% for card_id, qty in d.cards %}
-            <li><code>{{ qty }}x {{ card_id }}</code></li>
-            {% endfor %}
-          </ul>
-        </div>
+        <details class="deck-details"{% if loop.first %} open{% endif %}>
+          <summary class="deck-summary">
+            <span class="d-place">{{ d.placement | ordinal }}</span>
+            <span class="d-player">{{ d.player }}</span>
+            <span class="d-leader-id">leader <code>{{ d.leader_id }}</code></span>
+          </summary>
+          <p class="d-provenance">
+            <a href="{{ base_url }}/tournois/{{ t.slug }}/">{{ t.name }}</a>
+            — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+          </p>
+          <div class="deck-body">
+            <p class="d-leader">Leader : <code>{{ d.leader_id }}</code></p>
+            <ul class="card-list">
+              {% for card_id, qty in d.cards | sort_cards %}
+              <li><code>{{ qty }}x {{ card_id }}</code></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </details>
       </li>
       {% endfor %}
     </ol>
