@@ -7,7 +7,7 @@
 <section class="page-head">
   <h1>{{ format_label }}</h1>
   {% if role_label %}<p class="format-role-label">{{ role_label }}</p>{% endif %}
-  <p class="page-meta">{{ tournaments | length }} tournoi(s) — {{ total_lists }} liste(s).</p>
+  <p class="page-meta">{{ tournaments | length }} {{ tournaments | length | fr_plur("tournoi") }} — {{ total_lists }} {{ total_lists | fr_plur("liste") }}.</p>
 </section>
 
 <section class="archetypes">
@@ -17,7 +17,7 @@
     <li>
       <a href="{{ rel }}leaders/{{ aslug }}/">
         <span class="a-label">{{ label }}</span>
-        <span class="a-count">{{ count }} liste(s)</span>
+        <span class="a-count">{{ count }} {{ count | fr_plur("liste") }}</span>
       </a>
     </li>
     {% endfor %}

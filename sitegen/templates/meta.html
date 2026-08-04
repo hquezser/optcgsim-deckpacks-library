@@ -6,7 +6,7 @@
 
 <section class="page-head">
   <h1>{{ meta_name }}</h1>
-  <p class="page-meta">{{ meta_pairs | length }} liste(s) — fenêtre 60 jours,
+  <p class="page-meta">{{ meta_pairs | length }} {{ meta_pairs | length | fr_plur("liste") }} — fenêtre 60 jours,
     placement ≤ 8, plafond 40.</p>
 </section>
 
@@ -15,7 +15,7 @@
   {% for aslug, label, pairs in meta_groups %}
   <section class="meta-group">
     <h3><a href="{{ rel }}leaders/{{ aslug }}/">{{ label }}</a>
-      <span class="a-count">{{ pairs | length }} liste(s)</span></h3>
+      <span class="a-count">{{ pairs | length }} {{ pairs | length | fr_plur("liste") }}</span></h3>
     <ol class="deck-list compact">
       {% for t, d in pairs %}
       <li class="deck" id="meta-{{ aslug }}-{{ d.slug }}">

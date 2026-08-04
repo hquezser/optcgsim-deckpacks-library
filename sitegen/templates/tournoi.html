@@ -9,7 +9,7 @@
   <p class="page-meta">
     <span class="t-date">{{ tournament.date if tournament.date else "date inconnue" }}</span>
     {% if tournament.author %}<span class="t-author">source : {{ tournament.author }}</span>{% endif %}
-    <span class="t-count">{{ tournament.decks | length }} deck(s)</span>
+    <span class="t-count">{{ tournament.decks | length }} {{ tournament.decks | length | fr_plur("deck") }}</span>
   </p>
   {% if tournament.description %}<p class="t-source">Source : {{ tournament.description | urls_only }}</p>{% endif %}
 </section>

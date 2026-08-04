@@ -189,6 +189,18 @@ def sort_cards(cards) -> list:
     return sorted(cards, key=lambda c: (-c[1], c[0]))
 
 
+def fr_plur(n: int, singular: str) -> str:
+    """Accorde un nom au pluriel français : `fr_plur(1, "tournoi")` -> "tournoi",
+    `fr_plur(2, "tournoi")` -> "tournois".
+
+    Tous les noms utilisés dans ce site ont un pluriel régulier en +s
+    (tournoi, liste, deck, carte, format, autre, sélectionnée). Un filtre unique plutôt
+    que des `{% if %}` dispersés — et attention à « tournoi » -> « tournois » (cf. SPEC
+    § « Accords et redites » : 1705 pluriels parenthésés sur le corpus réel).
+    """
+    return singular if n == 1 else singular + "s"
+
+
 def _formats_recent_first(site: Site) -> list[str]:
     """Slugs de format du plus récent au plus ancien.
 
@@ -218,6 +230,7 @@ def _env(templates_dir: Path) -> Environment:
     env.filters["urls_only"] = urls_only
     env.filters["ordinal"] = ordinal
     env.filters["sort_cards"] = sort_cards
+    env.filters["fr_plur"] = fr_plur
     return env
 
 
