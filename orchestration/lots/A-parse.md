@@ -39,7 +39,24 @@ def load_site(packs_dir: Path) -> Site
 
 def parse_format(pack_name: str, tags: tuple[str, ...]) -> str
     """Le format (« la méta ») du tournoi : « OP16 », « OP14.5 »… "" si indéterminable."""
+
+def parse_circuit(author: str, tags: tuple[str, ...]) -> str
+    """« online » (simulateur) ou « paper » (tournoi physique). Défaut prudent : « paper »."""
 ```
+
+### Extraction du circuit (nouveau)
+
+`load_site` doit renseigner `Tournament.circuit`. Deux signaux concordants dans le corpus :
+
+1. l'**auteur** du pack : `chinoizecup-scraper` → `online`, `limitlesstcg-scraper` → `paper` ;
+2. un **tag** `online` sur les decks (les packs papier portent un nom de région à la place).
+
+Chaque signal suffit seul. Défaut `paper` si aucun ne parle.
+
+À quoi ça sert : `Site.current_format` est le dernier format du circuit **papier**, pas du
+tournoi le plus récent. Le simulateur reçoit les sets en avance, donc le tournoi le plus
+récent est presque toujours en ligne et en avance : le prendre pour référence faisait passer
+pour dépassé le format que la majorité joue, et vidait la liste des formats à venir.
 
 ### Extraction du format (nouveau)
 
@@ -89,6 +106,11 @@ Points d'attention, tous couverts par les tests :
   son tournoi.
 - `text` est conservé **verbatim** dans `Deck.text` : c'est cette chaîne qu'on réexporte
   telle quelle dans les packs dérivés, elle ne doit pas être normalisée.
+- **L'avertissement sur les sets non datés doit se restreindre aux tournois dont le format
+  n'a PAS pu être déduit.** Sur le corpus élargi il listait 26 sets à chaque build alors que
+  tous les tournois étaient correctement classés : un avertissement qui se déclenche toujours
+  n'est plus un avertissement. Un set non daté n'est actionnable que s'il empêche un
+  classement.
 - Si la quantité de la première ligne n'est pas `1`, ajouter un `BuildWarning` au `Site`
   (le leader est censé être en tête) — sans échouer.
 - Sortie **déterministe** : trier explicitement tout parcours de dossier, ne jamais

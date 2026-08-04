@@ -70,7 +70,15 @@ class Deck:
 
     @property
     def archetype_slug(self) -> str:
-        return slugify(self.archetype)
+        """Identité d'archétype = **l'ID de la carte de leader**, pas le nom parsé.
+
+        Un nom ne suffit pas : ChinoizeCupStats nomme ses decks par nom de personnage, et
+        « Monkey D. Luffy » recouvre au moins dix cartes de leader distinctes — regrouper
+        dessus produisait 271 listes sans rapport sur une même page. À l'inverse, Limitless
+        écrit « Green/Blue Luffy » là où ChinoizeCup écrit « Monkey D. Luffy » pour la MÊME
+        carte : l'ID réconcilie les deux sources au lieu de les éclater.
+        """
+        return slugify(self.leader_id)
 
     @property
     def total_cards(self) -> int:
@@ -89,10 +97,15 @@ class Tournament:
     author: str
     decks: tuple[Deck, ...]
     format: str = ""             # « OP16 », « OP14.5 »… "" si indéterminable
+    circuit: str = "paper"       # « paper » (tournoi physique) ou « online » (simulateur)
 
     @property
     def parsed_decks(self) -> tuple[Deck, ...]:
         return tuple(d for d in self.decks if d.parsed)
+
+    @property
+    def is_online(self) -> bool:
+        return self.circuit == "online"
 
     @property
     def format_slug(self) -> str:
@@ -145,14 +158,24 @@ class Site:
 
     @property
     def current_format(self) -> str:
-        """format_slug du tournoi le plus récent. "" si indéterminable.
+        """format_slug du dernier format joué sur le **circuit papier**. "" si indéterminable.
 
-        Sert d'ancre au pack « méta » : une simple fenêtre de dates peut chevaucher un
-        changement de format et mélanger deux environnements sans que rien ne le signale.
+        Volontairement PAS « le format du tournoi le plus récent » : le simulateur reçoit les
+        sets en avance, donc le tournoi le plus récent est presque toujours en ligne et en
+        avance. Cette définition-là faisait basculer « courant » sur un format que presque
+        personne ne joue encore, et vidait « à venir » — elle effaçait le décalage qu'elle
+        devait mettre en valeur.
+
+        Le circuit papier est le repère stable : c'est le format que la majorité des joueurs
+        pratique. Repli sur tous les circuits si le corpus n'a aucun tournoi papier.
         """
-        for t in self.sorted_tournaments:
-            if t.format_slug:
-                return t.format_slug
+        for source in (
+            (t for t in self.sorted_tournaments if not t.is_online),
+            self.sorted_tournaments,
+        ):
+            for t in source:
+                if t.format_slug:
+                    return t.format_slug
         return ""
 
     def format_label(self, format_slug: str) -> str:
@@ -222,9 +245,21 @@ class Site:
         }
 
     def archetype_label(self, archetype_slug: str) -> str:
-        """Libellé lisible d'un archétype (premier trouvé — le slug est dérivé du libellé)."""
+        """Libellé lisible d'un archétype identifié par l'ID de son leader.
+
+        Le slug étant désormais un ID de carte (`op16-022`), il faut choisir un libellé parmi
+        les noms que les sources donnent au même deck. On **préfère le circuit papier** :
+        Limitless écrit « Green/Blue Luffy », qui décrit le deck, là où ChinoizeCup écrit
+        « Monkey D. Luffy », qui ne décrit que le personnage. À circuit égal, le nom le plus
+        fréquent ; puis l'ordre alphabétique, pour que la sortie reste déterministe.
+        """
+        compte: dict[tuple[int, str], int] = {}
         for t in self.tournaments:
             for d in t.parsed_decks:
-                if d.archetype_slug == archetype_slug:
-                    return d.archetype
-        return archetype_slug
+                if d.archetype_slug == archetype_slug and d.archetype:
+                    cle = (0 if not t.is_online else 1, d.archetype)
+                    compte[cle] = compte.get(cle, 0) + 1
+        if not compte:
+            return archetype_slug.upper()
+        (_, label), _ = min(compte.items(), key=lambda kv: (kv[0][0], -kv[1], kv[0][1]))
+        return label

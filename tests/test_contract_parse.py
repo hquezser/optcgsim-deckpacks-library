@@ -122,6 +122,30 @@ def test_format_deduit_du_pool_en_dernier_recours(site):
     assert melbourne_like == "OP14.5"
 
 
+def test_parse_circuit_deux_signaux_independants():
+    """« online » ou « paper ». Deux signaux concordants dans le corpus réel :
+    l'auteur du pack et le tag de circuit. Défaut prudent : « paper »."""
+    assert parse.parse_circuit("chinoizecup-scraper", ("meta", "online", "op")) == "online"
+    assert parse.parse_circuit("limitlesstcg-scraper", ("meta", "Europe", "op16")) == "paper"
+    # Chaque signal suffit seul.
+    assert parse.parse_circuit("chinoizecup-scraper", ()) == "online"
+    assert parse.parse_circuit("", ("meta", "online")) == "online"
+    assert parse.parse_circuit("", ()) == "paper"
+
+
+def test_load_site_renseigne_le_circuit(site):
+    ccs = next(t for t in site.tournaments if "chinoizecup" in t.slug)
+    biel = next(t for t in site.tournaments if t.slug.endswith("bielefeld"))
+    assert ccs.circuit == "online" and ccs.is_online
+    assert biel.circuit == "paper" and not biel.is_online
+
+
+def test_courant_reste_le_papier_sur_la_fixture(site):
+    """La fixture ChinoizeCup est en OP16.5 : elle doit être « à venir », pas « courant »."""
+    assert site.current_format == "op16"
+    assert site.upcoming_formats == ("op16-5",)
+
+
 def test_deduction_ne_prime_jamais_sur_une_etiquette(site):
     """Les tournois étiquetés gardent leur étiquette : la déduction est une borne inférieure."""
     biel = next(t for t in site.tournaments if t.slug.endswith("bielefeld"))

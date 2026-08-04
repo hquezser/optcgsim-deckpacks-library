@@ -17,7 +17,8 @@ from pathlib import Path
 from . import formats
 from .model import BuildWarning, Deck, Site, Tournament
 
-__all__ = ["parse_deck_name", "parse_text", "load_site", "parse_format"]
+__all__ = ["parse_deck_name", "parse_text", "load_site", "parse_format",
+           "parse_circuit"]
 
 
 # Nom de deck : séparateur = tiret cadratin U+2014, entouré d'espaces.
@@ -60,6 +61,24 @@ def parse_format(pack_name: str, tags: tuple[str, ...]) -> str:
         if mt:
             return mt.group(0).upper()
     return ""
+
+
+def parse_circuit(author: str, tags: tuple[str, ...]) -> str:
+    """« online » (simulateur) ou « paper » (tournoi physique). Défaut prudent : « paper ».
+
+    Deux signaux concordants dans le corpus réel, chacun suffisant seul :
+      1. l'auteur du pack : `chinoizecup-scraper` -> online, `limitlesstcg-scraper` -> paper ;
+      2. un tag `online` sur les decks (les packs papier portent un nom de région à la place).
+    """
+    author_l = (author or "").lower()
+    if "chinoizecup" in author_l:
+        return "online"
+    if "limitlesstcg" in author_l:
+        return "paper"
+    for tag in tags:
+        if tag == "online":
+            return "online"
+    return "paper"
 
 
 def parse_deck_name(name: str) -> tuple[str, str, int | None]:
@@ -180,6 +199,13 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
         if pool:
             fmt = formats.infer_format(tuple(sorted(pool)))
 
+    # Circuit du tournoi : « online » (simulateur) ou « paper » (tournoi physique).
+    # Deux signaux concordants dans le corpus réel : l'auteur du pack et un tag
+    # `online` porté par les decks. Défaut prudent : « paper ». L'union des tags
+    # des decks suffit à capter le tag `online` quel que soit le deck qui le porte.
+    all_tags = tuple(sorted({t for raw in raw_decks for t in (raw.get("tags", []) or [])}))
+    circuit = parse_circuit(author, all_tags)
+
     tournament = Tournament(
         slug=slug,
         name=name,
@@ -188,6 +214,7 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
         author=author,
         decks=tuple(decks),
         format=fmt,
+        circuit=circuit,
     )
     return tournament, warnings
 

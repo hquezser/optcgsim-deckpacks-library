@@ -22,7 +22,7 @@ Lis d'abord :
 
 ### Le problème que ça résout
 
-Sur `/leaders/purple-enel/`, 19 listes sont identiques à ~90 %. Les lire l'une après l'autre
+Sur `/leaders/op15-058/`, 19 listes sont identiques à ~90 %. Les lire l'une après l'autre
 n'apprend rien. Ce qu'un joueur veut savoir, c'est **ce qui varie** entre elles : c'est là
 qu'est l'information de méta, et aucun site ne la sert aujourd'hui.
 
@@ -103,4 +103,4 @@ concerne pas : ne tente pas de la corriger ici).
 ## Sortie attendue
 
 Un résumé court : l'algorithme retenu pour la modale et les égalités, ce que donne le calcul
-sur `purple-enel` (19 listes) et `green-blue-luffy` (17), et toute divergence constatée.
+sur `op15-058` (Purple Enel) (19 listes) et `green-blue-luffy` (17), et toute divergence constatée.

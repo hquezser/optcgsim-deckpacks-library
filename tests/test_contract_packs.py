@@ -78,7 +78,7 @@ def test_write_packs_emet_les_chemins_du_contrat(written):
     out, paths = written
     rel = {p.relative_to(out).as_posix() for p in paths}
     assert "tournois/2026-07-04-regional-bielefeld/deckpack.json" in rel
-    assert "leaders/purple-enel/deckpack.json" in rel
+    assert "leaders/op15-058/deckpack.json" in rel
     assert "meta/deckpack.json" in rel
     # un pack d'un seul deck par deck, y compris le non parsable
     assert "tournois/2026-07-04-regional-bielefeld/decks/01-purple-enel-luka-forjan.json" in rel
@@ -90,7 +90,7 @@ def test_write_packs_emet_les_chemins_du_contrat(written):
 
 def test_write_packs_pack_leader_agrege_les_tournois(written):
     out, _ = written
-    pack = json.loads((out / "leaders" / "purple-enel" / "deckpack.json").read_text())
+    pack = json.loads((out / "leaders" / "op15-058" / "deckpack.json").read_text())
     # Enel apparaît dans trois tournois : Bielefeld (OP16), Ancien (OP15) et le tournoi en
     # ligne en avance (OP16.5, 2 listes). Le pack NON restreint les agrège tous — c'est un
     # inventaire, à distinguer des packs par format qui, eux, servent les agrégats.
@@ -137,8 +137,8 @@ def test_write_packs_emet_les_packs_par_format(written):
     assert "formats/op16/deckpack.json" in rel
     assert "formats/op15/deckpack.json" in rel
     # Pack d'un archétype restreint à un format : blue-doflamingo n'existe qu'en OP15.
-    assert "leaders/blue-doflamingo/op15.json" in rel
-    assert "leaders/blue-doflamingo/op16.json" not in rel, \
+    assert "leaders/op01-000/op15.json" in rel
+    assert "leaders/op01-000/op16.json" not in rel, \
         "pas de fichier pour un format où l'archétype n'a aucune liste"
 
 

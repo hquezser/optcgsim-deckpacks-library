@@ -86,7 +86,7 @@ entièrement dès qu'on restreignait au format dominant.
 
 **Slug** (fonction unique, réutilisée partout) : minuscules, toute suite de caractères
 non alphanumériques → `-`, tirets de tête/queue retirés.
-`"Purple Enel"` → `purple-enel` · `"Red/Black Koby"` → `red-black-koby` ·
+`"Purple Enel"` → `op15-058` (Purple Enel) · `"Red/Black Koby"` → `red-black-koby` ·
 `"Marc@@@1"` → `marc-1`.
 
 **Slug de deck** : `f"{placement:02d}-{slug(archetype)}-{slug(player)}"`.
@@ -222,6 +222,23 @@ produisait un espace visible (« 1 st ») qui se lit comme une coquille.
 
   Le cloisonnement par format est une exigence de **justesse**, pas de présentation :
   agréger deux formats fabrique un cœur qui ne correspond à aucun deck réel.
+
+  **Au plus 24 listes affichées par section de format**, les plus récentes d'abord, avec le
+  nombre d'omises indiqué. Sur le corpus réel un archétype atteint 234 listes, soit une page
+  de plus d'un demi-mégaoctet — illisible et lente en mobile. Le cœur commun et les écarts
+  restent calculés sur **toutes** les listes, et le `deckpack.json` en contient toujours
+  l'intégralité : c'est un plafond d'affichage, pas de données.
+
+### Identité d'un archétype
+
+Le slug d'archétype est **l'identifiant de la carte de leader** (`op16-022`), jamais un nom.
+Les sources ne nomment pas pareil : ChinoizeCupStats écrit « Monkey D. Luffy », qui recouvre
+au moins dix cartes de leader distinctes, là où Limitless écrit « Green/Blue Luffy ».
+Regrouper sur le nom mélangeait 271 listes sans rapport ; l'ID sépare ce qui doit l'être et
+**réunit les deux sources** sur la même carte.
+
+Le libellé affiché reste le nom lisible, choisi parmi ceux des sources en préférant le
+circuit papier (« Green/Blue Luffy » décrit le deck, « Monkey D. Luffy » le personnage).
 - **`/meta/`** : bloc import. La composition du pack méta, groupée par archétype.
 
 Pas de nom de carte affiché — **uniquement des IDs**. C'est un invariant, pas un manque

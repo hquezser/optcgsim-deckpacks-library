@@ -58,14 +58,14 @@ def test_leaders_regroupe_et_exclut_les_non_parses():
     vieux = Tournament("2026-04-01-v", "V", date(2026, 4, 1), "", "", (enel_vieux,))
     groups = Site(tournaments=(vieux, recent)).leaders()
 
-    assert list(groups) == ["purple-enel"]
+    assert list(groups) == ["op15-058"]
     # Provenance conservée, et le plus récent en premier.
-    assert [(t.slug, d.player) for t, d in groups["purple-enel"]] == [
+    assert [(t.slug, d.player) for t, d in groups["op15-058"]] == [
         ("2026-07-04-r", "Récent"), ("2026-04-01-v", "Vieux")]
 
 
-def _t(slug, d, fmt, decks=()):
-    return Tournament(slug, slug, d, "", "", decks, format=fmt)
+def _t(slug, d, fmt, decks=(), circuit="paper"):
+    return Tournament(slug, slug, d, "", "", decks, format=fmt, circuit=circuit)
 
 
 def test_format_slug_normalise_le_point():
@@ -98,19 +98,37 @@ def test_current_format_suit_le_tournoi_le_plus_recent():
 def test_deux_metas_a_venir_sont_differenciees():
     """Le simulateur peut être en avance de PLUSIEURS formats sur le papier.
 
-    Courant = format du tournoi le plus récent (ce que la majorité joue). À venir = tous les
+    Courant = dernier format du circuit PAPIER (ce que la majorité joue). À venir = tous les
     formats postérieurs présents dans le corpus, du plus proche au plus lointain — ce sont
     des rôles, les formats gardent leurs codes réels.
     """
     papier = _t("2026-07-26-papier", date(2026, 7, 26), "OP16")
-    sim1 = _t("2026-07-15-sim", date(2026, 7, 15), "OP16.5")
-    sim2 = _t("2026-07-20-sim2", date(2026, 7, 20), "OP17")
+    sim1 = _t("2026-07-15-sim", date(2026, 7, 15), "OP16.5", circuit="online")
+    sim2 = _t("2026-07-20-sim2", date(2026, 7, 20), "OP17", circuit="online")
     vieux = _t("2026-05-01-vieux", date(2026, 5, 1), "OP15")
     site = Site(tournaments=(papier, sim1, sim2, vieux))
 
     assert site.current_format == "op16"
     assert site.upcoming_formats == ("op16-5", "op17")   # du plus proche au plus lointain
     assert site.past_formats == ("op15",)
+
+
+def test_courant_ignore_les_tournois_en_ligne_plus_recents():
+    """Le piège que la définition « tournoi le plus récent » faisait tomber.
+
+    Un tournoi sim postérieur ET en avance ne doit pas devenir le format courant : il vide
+    « à venir » et fait passer pour dépassé le format que presque tout le monde joue.
+    """
+    papier = _t("2026-07-01-papier", date(2026, 7, 1), "OP16")
+    sim = _t("2026-07-28-sim", date(2026, 7, 28), "OP16.5", circuit="online")
+    site = Site(tournaments=(papier, sim))
+    assert site.current_format == "op16"
+    assert site.upcoming_formats == ("op16-5",)
+
+
+def test_repli_si_le_corpus_n_a_aucun_tournoi_papier():
+    sim = _t("2026-07-28-sim", date(2026, 7, 28), "OP16.5", circuit="online")
+    assert Site(tournaments=(sim,)).current_format == "op16-5"
 
 
 def test_roles_vides_quand_il_n_y_a_qu_un_format():
@@ -142,12 +160,12 @@ def test_leaders_filtre_par_format():
     b = _t("2026-04-01-b", date(2026, 4, 1), "OP15", (d15,))
     site = Site(tournaments=(a, b))
 
-    assert len(site.leaders()["purple-enel"]) == 2                 # tout le corpus
-    assert [d.player for _, d in site.leaders("op16")["purple-enel"]] == ["Récent"]
-    assert [d.player for _, d in site.leaders("op15")["purple-enel"]] == ["Ancien"]
+    assert len(site.leaders()["op15-058"]) == 2                 # tout le corpus
+    assert [d.player for _, d in site.leaders("op16")["op15-058"]] == ["Récent"]
+    assert [d.player for _, d in site.leaders("op15")["op15-058"]] == ["Ancien"]
     assert site.leaders("op99") == {}
 
 
 def test_archetype_label_retrouve_le_libelle():
     t = Tournament("2026-07-04-r", "R", date(2026, 7, 4), "", "", (_deck(),))
-    assert Site(tournaments=(t,)).archetype_label("purple-enel") == "Purple Enel"
+    assert Site(tournaments=(t,)).archetype_label("op15-058") == "Purple Enel"

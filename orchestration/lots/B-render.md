@@ -29,7 +29,7 @@ OPTCGSim. Ce bloc doit être l'élément visuellement dominant de chaque page, e
 `<pre>`/`<code>` sélectionnable d'un geste :
 
 ```
-studio decks import-pack https://exemple.org/leaders/purple-enel/deckpack.json
+studio decks import-pack https://exemple.org/leaders/op15-058/deckpack.json
 ```
 
 Tout le reste de la page est secondaire. Ne l'enterre pas en bas de page ni dans une
@@ -130,6 +130,26 @@ entièrement dès qu'on restreignait au format dominant. Appelle donc
 
 Les tournois de format indéterminé (ChinoizeCupStats aujourd'hui) n'apparaissent dans
 aucune page de format. Ils restent visibles sur leur propre page de tournoi et à l'accueil.
+
+## Plafond d'affichage et identité par ID de leader (tests rouges)
+
+Le corpus a été élargi à **114 tournois et 1823 listes**, ce qui change les ordres de grandeur.
+
+1. **Au plus 24 listes affichées par section de format**, les plus récentes d'abord, en
+   indiquant combien sont omises et le total réel. Un archétype atteint 234 listes, soit une
+   page de plus d'un demi-mégaoctet : illisible et lente en mobile. Le cœur commun et les
+   écarts restent calculés sur **toutes** les listes, et le `deckpack.json` en contient
+   toujours l'intégralité — c'est un plafond d'affichage, pas de données.
+
+2. **L'identité d'un archétype est désormais l'ID de la carte de leader** (`op16-022`), plus
+   un nom. `Deck.archetype_slug` le fournit déjà, et `Site.archetype_label(aslug)` donne le
+   libellé lisible à afficher. Continue d'afficher le libellé, jamais le slug brut, sauf là
+   où une URL est attendue.
+
+3. **Affiche le circuit** (`Tournament.circuit` / `.is_online`) sur les entrées de tournoi et
+   de liste : 100 des 114 tournois sont des coupes en ligne, 14 des tournois papier. La
+   provenance n'a pas la même valeur de preuve dans les deux cas, et le lecteur doit pouvoir
+   la distinguer d'un coup d'œil.
 
 ## Correctif de portabilité (test rouge)
 

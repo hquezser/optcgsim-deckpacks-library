@@ -23,7 +23,7 @@ import pytest
 
 from sitegen import archetype
 
-ASLUG = "blue-doflamingo"
+ASLUG = "op01-000"
 
 
 @pytest.fixture
@@ -61,7 +61,7 @@ def test_core_vide_en_dessous_du_seuil_de_listes(site):
     produiraient un cœur commun mélangeant OP15, OP16 et OP16.5, donc un deck impossible.
     """
     for fslug in site.formats():
-        pairs = site.leaders(fslug).get("purple-enel", ())
+        pairs = site.leaders(fslug).get("op15-058", ())
         assert len(pairs) < archetype.MIN_LISTS_FOR_DIFF
         assert archetype.core_cards(pairs) == {}
     assert archetype.core_cards(()) == {}

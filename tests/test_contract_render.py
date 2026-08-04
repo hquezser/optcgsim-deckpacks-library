@@ -39,10 +39,13 @@ def test_emet_exactement_les_pages_du_contrat(built):
         "tournois/2026-04-01-regional-ancien/index.html",
         "tournois/2026-04-15-treasure-cup-noyau/index.html",
         "tournois/2026-06-15-chinoizecup-avance/index.html",
-        "leaders/purple-enel/index.html",
-        "leaders/red-black-koby/index.html",
-        "leaders/green-blue-luffy/index.html",
-        "leaders/blue-doflamingo/index.html",
+        # Identité = ID de la carte de leader, pas le nom parsé (cf. Deck.archetype_slug).
+        # OP11-041 est le leader du deck non parsable : sans placement ni joueur il n'entre
+        # dans aucune vue agrégée, donc pas de page.
+        "leaders/op15-058/index.html",
+        "leaders/op16-022/index.html",
+        "leaders/op12-061/index.html",
+        "leaders/op01-000/index.html",
     }
     assert all(p.exists() for p in paths)
 
@@ -58,8 +61,8 @@ def test_commande_import_presente_et_absolue(built):
     cmd = (f"studio decks import-pack {BASE}/tournois/"
            "2026-07-04-regional-bielefeld/deckpack.json")
     assert cmd in _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
-    assert f"studio decks import-pack {BASE}/leaders/purple-enel/deckpack.json" in \
-        _html(out, "leaders/purple-enel/index.html")
+    assert f"studio decks import-pack {BASE}/leaders/op15-058/deckpack.json" in \
+        _html(out, "leaders/op15-058/index.html")
     assert f"studio decks import-pack {BASE}/meta/deckpack.json" in _html(out, "meta/index.html")
 
 
@@ -198,9 +201,9 @@ def test_commande_import_reste_absolue(built):
 def test_site_utilisable_en_file_url(built):
     """Test de portabilité : la feuille de style doit être atteignable depuis le document."""
     out, _ = built
-    page = _html(out, "leaders/purple-enel/index.html")
+    page = _html(out, "leaders/op15-058/index.html")
     href = re.search(r"""<link[^>]+href\s*=\s*["']([^"']+)""", page).group(1)
-    cible = (out / "leaders" / "purple-enel" / href).resolve()
+    cible = (out / "leaders" / "op15-058" / href).resolve()
     assert cible.is_file(), f"feuille de style introuvable depuis la page : {href}"
 
 
@@ -230,7 +233,7 @@ def test_page_leader_montre_lecart(built):
     """LOT E — sur un archétype assez fourni, la page affiche les écarts, pas 5 listes
     quasi identiques à lire l'une après l'autre."""
     out, _ = built
-    page = _html(out, "leaders/blue-doflamingo/index.html")
+    page = _html(out, "leaders/op01-000/index.html")
     assert "cœur" in page.lower() or "coeur" in page.lower(), \
         "le cœur commun doit être nommé et affiché une seule fois"
     assert re.search(r"\d+\s*carte", page), "la taille de l'écart doit être indiquée"
@@ -301,7 +304,7 @@ def test_page_leader_cloisonne_par_format(built):
     présenter séparément, pas les fondre.
     """
     out, _ = built
-    page = _html(out, "leaders/purple-enel/index.html")
+    page = _html(out, "leaders/op15-058/index.html")
     assert "OP16" in page and "OP15" in page
     i16, i15 = page.find("OP16"), page.find("OP15")
     assert 0 < i16 < i15, "les formats doivent aller du plus récent au plus ancien"
@@ -310,21 +313,52 @@ def test_page_leader_cloisonne_par_format(built):
 def test_page_leader_import_par_format(built):
     """Chaque section de format porte sa propre commande, restreinte à ce format."""
     out, _ = built
-    page = _html(out, "leaders/blue-doflamingo/index.html")
-    assert f"studio decks import-pack {BASE}/leaders/blue-doflamingo/op15.json" in page
+    page = _html(out, "leaders/op01-000/index.html")
+    assert f"studio decks import-pack {BASE}/leaders/op01-000/op15.json" in page
+
+
+def test_plafond_de_listes_par_section(tmp_path):
+    """Au plus 24 listes affichées par format ; le cœur et le pack portent sur toutes.
+
+    Sur le corpus réel un archétype atteint 234 listes — une page de plus d'un demi-Mo,
+    illisible en mobile. Construit ici en mémoire plutôt qu'en fixture : 30 decks de fichiers
+    alourdiraient tous les autres tests pour un seul comportement.
+    """
+    from datetime import date
+
+    from sitegen.model import Deck, Site, Tournament
+
+    decks = tuple(
+        Deck(raw_name=f"Purple Enel — J{i:02d} ({i})", archetype="Purple Enel",
+             player=f"J{i:02d}", placement=i, leader_id="OP15-058",
+             cards=(("OP15-061", 4), ("OP15-067", 3)),
+             text="1xOP15-058\n4xOP15-061\n3xOP15-067")
+        for i in range(1, 31)
+    )
+    t = Tournament("2026-07-04-gros", "OP16 Gros Tournoi", date(2026, 7, 4), "", "",
+                   decks, format="OP16")
+    paths = render.write_pages(Site(tournaments=(t,)), tmp_path, base_url=BASE)
+    page = next(p for p in paths
+                if p.as_posix().endswith("leaders/op15-058/index.html")).read_text()
+
+    affichees = len(re.findall(r"J\d\d", page))
+    assert affichees <= 24, f"{affichees} listes affichées, plafond 24"
+    assert "30" in page, "le total réel doit rester annoncé"
+    assert re.search(r"(6|autre|omis|de plus)", page, re.IGNORECASE), \
+        "le nombre de listes non affichées doit être indiqué"
 
 
 def test_page_leader_sous_le_seuil_reste_complete(built):
     """purple-enel n'a que 2 listes : pas de cœur, affichage complet conservé."""
     out, _ = built
-    page = _html(out, "leaders/purple-enel/index.html")
+    page = _html(out, "leaders/op15-058/index.html")
     assert "OP15-061" in page and "OP15-067" in page
 
 
 def test_page_leader_cite_la_provenance(built):
     """Toute la valeur de preuve d'une page leader est dans la provenance des listes."""
     out, _ = built
-    page = _html(out, "leaders/purple-enel/index.html")
+    page = _html(out, "leaders/op15-058/index.html")
     assert "Luka Forjan" in page and "Vieux Joueur" in page
     assert "Bielefeld" in page and "Ancien" in page
 
@@ -333,7 +367,7 @@ def test_index_liste_tournois_et_archetypes(built):
     out, _ = built
     page = _html(out, "index.html")
     assert "Bielefeld" in page and "Ancien" in page
-    assert "purple-enel" in page
+    assert "op15-058" in page
     assert "meta/" in page
 
 
