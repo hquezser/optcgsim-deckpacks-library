@@ -208,6 +208,15 @@ Ce tri est **d'affichage uniquement**. `Deck.text` et les `deckpack.json` produi
 conservent l'ordre source verbatim — c'est un contrat de données consommé par un autre
 programme.
 
+### Accords et redites
+
+- **Aucun pluriel parenthésé** (`carte(s)`, `liste(s)`, `tournoi(s)`…). Le nombre est
+  toujours connu au moment du rendu : accorder est gratuit, et laisser le lecteur choisir
+  n'est pas du français. Il y en avait 1705 sur le corpus réel.
+- **Le compte d'écart d'une liste est annoncé une seule fois**, dans son résumé — c'est le
+  seul endroit qui reste visible quand la liste est repliée. Le titre qui le répétait juste
+  en dessous est supprimé.
+
 ### Placement
 
 Rendu en texte simple contigu (`1st`, `2nd`, `11th`), **sans `<sup>`** : la mise en exposant

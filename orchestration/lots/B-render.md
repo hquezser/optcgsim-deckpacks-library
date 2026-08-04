@@ -151,6 +151,18 @@ Le corpus a été élargi à **114 tournois et 1823 listes**, ce qui change les 
    provenance n'a pas la même valeur de preuve dans les deux cas, et le lecteur doit pouvoir
    la distinguer d'un coup d'œil.
 
+## Accords et redites (tests rouges)
+
+1. **Supprime tous les pluriels parenthésés** — `carte(s)`, `liste(s)`, `deck(s)`,
+   `tournoi(s)`, `format(s)`, `autre(s)`, `sélectionnée(s)`. Il y en a 1705 sur le corpus
+   réel. Le nombre est toujours connu au rendu : accorde-le. Un filtre Jinja unique est
+   préférable à des `{% if %}` dispersés — attention à « tournoi » → « tournois ».
+
+2. **Le compte d'écart d'une liste ne doit être annoncé qu'une fois.** Il figure aujourd'hui
+   dans le résumé (`3 d'écart`) *et* en titre juste en dessous (`3 carte(s) d'écart`).
+   Garde-le dans le **résumé**, qui reste visible quand la liste est repliée, en l'accordant
+   (« 3 cartes d'écart », « 1 carte d'écart »), et supprime le titre.
+
 ## Correctif de portabilité (test rouge)
 
 Les liens internes et la feuille de style sont aujourd'hui **absolus** contre `--base-url`

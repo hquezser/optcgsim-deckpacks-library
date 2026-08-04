@@ -386,6 +386,68 @@ def test_plafond_de_listes_par_section(tmp_path):
         "le nombre de listes non affichées doit être indiqué"
 
 
+def _site_avec_ecarts():
+    """5 listes partageant 12 cartes, chacune avec une carte propre : cœur de 12, écart de 1."""
+    from datetime import date
+
+    from sitegen.model import Deck, Site, Tournament
+
+    commun = tuple((f"OP01-{i:03d}", 4) for i in range(1, 13))          # 48 cartes
+    decks = []
+    for i in range(5):
+        propre = (f"OP02-{i:03d}", 2)                                    # +2 = 50
+        cartes = commun + (propre,)
+        texte = "1xOP01-000\n" + "\n".join(f"{q}x{c}" for c, q in cartes)
+        decks.append(Deck(raw_name=f"X — J{i} ({i + 1})", archetype="X", player=f"J{i}",
+                          placement=i + 1, leader_id="OP01-000", cards=cartes, text=texte))
+    t = Tournament("2026-07-04-t", "OP16 Tournoi", date(2026, 7, 4), "", "",
+                   tuple(decks), format="OP16")
+    return Site(tournaments=(t,))
+
+
+def test_aucun_pluriel_parenthese(built):
+    """« carte(s) » est une facilité d'écriture, pas du français.
+
+    1705 occurrences sur le corpus réel, dont 1025 « carte(s) ». Le nombre est toujours connu
+    au moment du rendu : il n'y a aucune raison de laisser le lecteur choisir.
+    """
+    out, paths = built
+    for p in [q for q in paths if q.suffix in {".html", ".css"}]:
+        texte = p.read_text(encoding="utf-8")
+        trouve = re.findall(r"\w+\((?:s|x)\)", texte)
+        assert not trouve, f"pluriel parenthésé dans {p.name} : {sorted(set(trouve))[:5]}"
+
+
+def test_accord_singulier_et_pluriel(tmp_path):
+    """Un seul élément se dit au singulier, plusieurs au pluriel."""
+    from datetime import date
+
+    from sitegen.model import Deck, Site, Tournament
+
+    d = Deck(raw_name="X — J (1)", archetype="X", player="J", placement=1,
+             leader_id="OP01-000", cards=(("OP01-001", 4),), text="1xOP01-000\n4xOP01-001")
+    un = Tournament("2026-07-04-un", "OP16 Un", date(2026, 7, 4), "", "", (d,), format="OP16")
+    page = next(p for p in render.write_pages(Site(tournaments=(un,)), tmp_path, base_url=BASE)
+                if p.name == "index.html").read_text()
+    assert "1 tournoi " in page or "1 tournoi<" in page or "1 tournoi\n" in page
+    assert "1 tournois" not in page
+    assert "1 listes" not in page
+
+
+def test_nombre_d_ecart_annonce_une_seule_fois(tmp_path):
+    """Le compte d'écart figurait dans le résumé ET en titre juste dessous.
+
+    Le résumé est le bon endroit : il reste visible quand la liste est repliée.
+    """
+    paths = render.write_pages(_site_avec_ecarts(), tmp_path, base_url=BASE)
+    page = next(p for p in paths
+                if p.as_posix().endswith("leaders/op01-000/index.html")).read_text()
+    assert "carte(s) d'écart" not in page
+    # 5 listes, donc 5 mentions d'écart — pas 10.
+    assert len(re.findall(r"d'écart", page)) == 5, \
+        f"{len(re.findall(r'écart', page))} mentions d'écart pour 5 listes"
+
+
 def test_page_leader_sous_le_seuil_reste_complete(built):
     """purple-enel n'a que 2 listes : pas de cœur, affichage complet conservé."""
     out, _ = built
