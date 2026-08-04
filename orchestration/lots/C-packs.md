@@ -7,7 +7,7 @@ importera — par tournoi, par archétype de leader, un pack « méta », et un 
 
 ## Contexte
 
-Tu travailles dans `/Users/hugoq/playground/optcgsim-deckpacks-library`. Les fichiers que
+Tu travailles dans le dépôt courant (`optcgsim-deckpacks-library`, dans l'écosystème optcgsim). Les fichiers que
 tu produis sont **le produit réel du site** : ce sont eux que `studio decks import-pack
 <url>` consomme. Les pages HTML (lot B) ne sont que leur vitrine.
 

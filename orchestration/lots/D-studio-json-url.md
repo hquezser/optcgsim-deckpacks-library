@@ -7,7 +7,7 @@ les URLs de `.zip` et de dépôt GitHub fonctionnent.
 
 ## Contexte
 
-Tu travailles dans `/Users/hugoq/playground/optcgsim-studio`, **un dépôt mature** avec de
+Tu travailles dans le dépôt courant (`optcgsim-studio`, dans l'écosystème optcgsim), **un dépôt mature** avec de
 l'historique et une suite de tests fournie. Tu es sur la branche `feat/import-pack-json-url`,
 créée pour ce lot : reste dessus, ne la fusionne pas, ne touche pas à `main`.
 

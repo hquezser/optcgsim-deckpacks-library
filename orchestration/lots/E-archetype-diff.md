@@ -7,7 +7,7 @@ que ce qui l'en distingue.
 
 ## Contexte
 
-Tu travailles dans `/Users/hugoq/playground/optcgsim-deckpacks-library`. **Ce lot arrive
+Tu travailles dans le dépôt courant (`optcgsim-deckpacks-library`, dans l'écosystème optcgsim). **Ce lot arrive
 après les lots A à D, qui sont verts** : `sitegen/parse.py`, `packs.py`, `render.py` et les
 gabarits existent et fonctionnent.
 

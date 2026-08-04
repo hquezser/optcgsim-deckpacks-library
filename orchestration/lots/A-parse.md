@@ -7,7 +7,7 @@ en objets `Site`/`Tournament`/`Deck` définis dans `sitegen/model.py`.
 
 ## Contexte
 
-Tu travailles dans `/Users/hugoq/playground/optcgsim-deckpacks-library`, un générateur de
+Tu travailles dans le dépôt courant (`optcgsim-deckpacks-library`, dans l'écosystème optcgsim), un générateur de
 site statique qui expose des decklists One Piece TCG comme rampe d'accès vers le
 simulateur OPTCGSim.
 

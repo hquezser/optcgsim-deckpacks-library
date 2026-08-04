@@ -7,7 +7,7 @@
 
 ## Contexte
 
-Tu travailles dans `/Users/hugoq/playground/optcgsim-deckpacks-library`, un générateur de
+Tu travailles dans le dépôt courant (`optcgsim-deckpacks-library`, dans l'écosystème optcgsim), un générateur de
 site statique qui expose des decklists One Piece TCG scrapées de tournois.
 
 Lis d'abord, dans cet ordre :
