@@ -26,6 +26,10 @@ sys.path.insert(0, str(ROOT))
 _MOTIFS_INTERDITS = ("<script", "@import", "cdn.", "fonts.google", "googletagmanager",
                      "google-analytics", "doubleclick")
 
+# Avertissements non bloquants relevés par le studio (quantités inhabituelles). Accumulés
+# pendant les contrôles, affichés en fin de rapport.
+_AVERTISSEMENTS: list[str] = []
+
 
 def expected_paths(site) -> set[str]:
     """L'ensemble EXACT attendu dans dist/, dérivé du corpus (cf. spec § carte des URLs)."""
@@ -214,6 +218,16 @@ def check_studio_resolves(dist: Path) -> list[str]:
         for e in echecs:
             errs.append(f"{pack_dir.relative_to(dist).as_posix()} : {e}")
 
+        # Les « ⚠ » ne bloquent pas l'import mais signalent une donnée douteuse (quantité
+        # inhabituelle). Le studio a cessé d'en faire des erreurs — à raison, sa table de
+        # cartes illimitées sera toujours en retard d'une sortie. Ils resteraient donc
+        # invisibles ici, alors que c'est exactement le signal qui aurait sorti l'anomalie
+        # `9xOP16-042` bien plus tôt. Collectés à titre informatif, jamais bloquants.
+        for ln in lignes:
+            if ln.lstrip().startswith("⚠"):
+                _AVERTISSEMENTS.append(
+                    f"{pack_dir.relative_to(dist).as_posix()} : {ln.strip().lstrip('⚠ ')}")
+
         # Un code non nul SANS ligne « ✗ » signifie que la vérification n'a pas eu lieu —
         # à distinguer absolument de « rien à signaler », sinon le contrôle se contente de
         # ne rien voir et se déclare vert.
@@ -256,6 +270,17 @@ def main(argv: list[str]) -> int:
                 print(f"    · … et {len(errs) - 25} autre(s)")
         else:
             print(f"✓ {label}")
+
+    if _AVERTISSEMENTS:
+        uniques = sorted(set(_AVERTISSEMENTS))
+        print(f"\n⚠ {len(uniques)} avertissement(s) du studio — non bloquants, "
+              f"mais à regarder : une quantité inhabituelle trahit parfois un défaut de "
+              f"scraping.")
+        for a in uniques[:10]:
+            print(f"    · {a}")
+        if len(uniques) > 10:
+            print(f"    · … et {len(uniques) - 10} autre(s)")
+
     return 1 if ko else 0
 
 
