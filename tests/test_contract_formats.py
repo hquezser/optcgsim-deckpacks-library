@@ -19,6 +19,22 @@ def test_ordre_numerique_pas_lexicographique():
     assert F.format_key("") == (-1, -1) and F.format_key("bidon") == (-1, -1)
 
 
+def test_format_key_accepte_le_slug_autant_que_le_libelle():
+    """Deux orthographes du même format : le libellé « OP14.5 » et le slug d'URL « op14-5 ».
+
+    Ne reconnaître que le libellé était un piège silencieux : tout appelant triant sur des
+    slugs obtenait (-1, -1) et reléguait les formats à décimale en fin de liste. Constaté
+    dans le rendu, où OP14.5 s'affichait après OP13.
+    """
+    assert F.format_key("op14-5") == F.format_key("OP14.5") == (14, 5)
+    assert F.format_key("op16-5") == (16, 5)
+    assert F.format_key("op16") == (16, 0)
+    # Et l'ordre attendu tient sur des slugs seuls.
+    slugs = ["op13", "op14", "op14-5", "op15", "op16", "op16-5"]
+    assert sorted(slugs, key=F.format_key, reverse=True) == [
+        "op16-5", "op16", "op15", "op14-5", "op14", "op13"]
+
+
 def test_un_booster_ouvre_son_propre_format():
     """Structurel : aucune donnée à déclarer pour les boosters."""
     assert F.format_of_set("OP16") == "OP16"

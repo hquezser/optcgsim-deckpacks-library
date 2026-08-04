@@ -272,6 +272,44 @@ def test_index_distingue_courant_a_venir_et_passes(built):
     assert 0 < i_courant < i_venir
 
 
+def test_ordre_des_formats_suit_le_modele(tmp_path):
+    """Le rendu doit CONSOMMER l'ordre du modèle, pas en refaire un.
+
+    Bug observé sur le corpus réel : « Formats passés » affichait OP15, OP14, OP13, OP14.5 —
+    OP14.5 relégué après OP13, alors que `Site.past_formats` renvoyait le bon ordre. Le
+    rendu re-triait, et sur des libellés à décimale un tri maison se trompe.
+    """
+    from datetime import date
+
+    from sitegen.model import Deck, Site, Tournament
+
+    def t(slug, fmt, mois, jour, circuit="paper"):
+        d = Deck(raw_name="X — Y (1)", archetype="X", player="Y", placement=1,
+                 leader_id="OP01-001", cards=(("OP01-002", 4),),
+                 text="1xOP01-001\n4xOP01-002")
+        return Tournament(slug, slug, date(2026, mois, jour), "", "", (d,),
+                          format=fmt, circuit=circuit)
+
+    # Les dates DIVERGENT volontairement de l'ordre des formats, comme dans le corpus réel :
+    # OP14.5 n'a qu'un tournoi ancien (mars), tandis qu'OP14 en a un plus récent (juin). Un
+    # tri sur « date du tournoi le plus récent du format » reléguerait donc OP14.5 en fin de
+    # liste — c'est exactement le bug observé, où OP14.5 s'affichait après OP13.
+    site = Site(tournaments=(
+        t("2026-07-20-a", "OP16", 7, 20), t("2026-07-10-b", "OP15", 7, 10),
+        t("2026-03-05-c", "OP14.5", 3, 5), t("2026-06-01-d", "OP14", 6, 1),
+        t("2026-02-01-e", "OP13", 2, 1),
+        t("2026-07-25-f", "OP16.5", 7, 25, circuit="online"),
+    ))
+    assert site.past_formats == ("op15", "op14-5", "op14", "op13")
+
+    paths = render.write_pages(site, tmp_path, base_url=BASE)
+    page = next(p for p in paths if p.name == "index.html").read_text()
+    positions = [page.find(f"formats/{f}/") for f in site.past_formats]
+    assert all(p >= 0 for p in positions), "tous les formats passés doivent être liés"
+    assert positions == sorted(positions), \
+        f"ordre d'affichage {positions} ≠ ordre du modèle {site.past_formats}"
+
+
 def test_page_format_annonce_son_role(built):
     """Un visiteur arrivant directement sur /formats/op16-5/ doit savoir où il est."""
     out, _ = built

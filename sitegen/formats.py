@@ -45,7 +45,11 @@ FORMAT_OF_SET: dict[str, str] = {
     "ST36": "OP16.5",
 }
 
-_FORMAT_RE = re.compile(r"^OP(\d+)(?:\.(\d+))?$", re.IGNORECASE)
+# Accepte les DEUX orthographes du même format : le libellé « OP14.5 » et son slug d'URL
+# « op14-5 ». Ne pas accepter le slug était un piège : `format_key("op14-5")` renvoyait
+# (-1, -1) en silence, et tout appelant qui trie sur des slugs reléguait les formats à
+# décimale en fin de liste. C'est arrivé dans le rendu — OP14.5 s'affichait après OP13.
+_FORMAT_RE = re.compile(r"^OP(\d+)(?:[.-](\d+))?$", re.IGNORECASE)
 _BOOSTER_RE = re.compile(r"^OP(\d+)$", re.IGNORECASE)
 _LINE_RE = re.compile(r"^\d+x([A-Z]+\d+)-\d+$")
 
