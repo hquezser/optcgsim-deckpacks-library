@@ -269,16 +269,21 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     ]
     # Rôles : courant / à venir / passés. Ce sont des rôles, pas des identités —
     # les formats gardent leurs codes réels et leurs URLs. On annote, on ne renomme pas.
+    # On CONSOMME l'ordre du modèle (`current_format`, `upcoming_formats`,
+    # `past_formats`) et non un tri maison : un tri sur la date du tournoi le plus
+    # récent de chaque format relègue les formats à décimale (OP14.5) là où le
+    # modèle les place correctement (cf. test_ordre_des_formats_suit_le_modele).
     current = site.current_format
-    upcoming = set(site.upcoming_formats)
-    past = set(site.past_formats)
+    upcoming = site.upcoming_formats
+    past = site.past_formats
+    row_by_fslug = {r[0]: r for r in format_rows}
     format_groups = [
         ("courant", "Format courant",
-         [r for r in format_rows if r[0] == current and current]),
+         [row_by_fslug[f] for f in (current,) if f and f in row_by_fslug]),
         ("a-venir", "Formats à venir",
-         [r for r in format_rows if r[0] in upcoming]),
+         [row_by_fslug[f] for f in upcoming if f in row_by_fslug]),
         ("passes", "Formats passés",
-         [r for r in format_rows if r[0] in past]),
+         [row_by_fslug[f] for f in past if f in row_by_fslug]),
     ]
     recent = site.sorted_tournaments[:20]
     index_tpl = env.get_template("index.html")
