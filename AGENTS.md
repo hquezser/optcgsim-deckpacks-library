@@ -35,9 +35,10 @@ Ce dépôt ne définit pas le format et ne scrape rien. Il **rend**.
     franchement indéfendable du projet. Le hotlinking est pire : fuite d'IP des visiteurs,
     bande passante d'un tiers, et rupture de l'invariant zéro-sous-ressource.
   - Les noms et statistiques sont, eux, disponibles hors ligne dans
-    `optcgsim-haki-public/optcgsim_haki/data/card_stats.json` (2558 cartes). Leur absence
-    ici est donc bien une décision, pas un manque de données — ne pas « corriger » ce qui
-    ressemblerait à un oubli.
+    `optcgsim-haki-public/optcgsim_haki/data/card_stats.json` (2558 cartes) — dépôt rangé
+    HORS écosystème, dans `../../draft-optcgsim-projects/`. Leur absence ici est donc bien
+    une décision, pas un manque de données — ne pas « corriger » ce qui ressemblerait à un
+    oubli.
 
   **Exception unique et assumée : le libellé d'archétype.** On affiche « Purple Enel » et
   non `OP15-058`, alors qu'« Enel » est un nom de carte. C'est une exception raisonnée, pas
