@@ -122,6 +122,18 @@ def test_format_deduit_du_pool_en_dernier_recours(site):
     assert melbourne_like == "OP14.5"
 
 
+def test_pas_d_avertissement_si_tout_est_classe(site):
+    """Un avertissement qui se déclenche toujours n'avertit plus de rien.
+
+    Sur le corpus élargi il listait 26 sets non datés à chaque build alors que les 114
+    tournois étaient correctement classés. Un set non daté n'est actionnable que s'il
+    empêche effectivement un classement.
+    """
+    assert all(t.format for t in site.tournaments), "la fixture doit être entièrement classée"
+    non_dates = [w for w in site.warnings if "non daté" in w.message.lower()]
+    assert non_dates == [], f"avertissement inutile : {[w.message for w in non_dates]}"
+
+
 def test_parse_circuit_deux_signaux_independants():
     """« online » ou « paper ». Deux signaux concordants dans le corpus réel :
     l'auteur du pack et le tag de circuit. Défaut prudent : « paper »."""

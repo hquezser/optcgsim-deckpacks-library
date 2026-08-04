@@ -40,6 +40,12 @@ META_AUTHOR = "optcgsim-deckpacks-library"
 # donner au joueur la taille de l'écart sans répéter le leader dans le corps.
 DECK_SIZE = 50
 
+# Plafond d'AFFICHAGE des listes par section de format sur /leaders/<aslug>/. Au-delà,
+# la page devient illisible en mobile (un archétype du corpus réel atteint 234 listes,
+# soit > 0,5 Mo). Le cœur commun et le `deckpack.json` portent toujours sur l'intégralité
+# — c'est un plafond de présentation, pas de données (cf. SPEC § « Contenu des pages »).
+LEADER_LISTS_CAP = 24
+
 
 def meta_pairs(site: Site) -> tuple[tuple[Tournament, Deck], ...]:
     """Sélection déterministe des decks du pack méta (cf. SPEC).
@@ -379,10 +385,20 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
                 (t, d, deck_delta(d, f_core) if f_show_diff else ())
                 for t, d in f_pairs
             )
+            # Plafond d'affichage : on ne garde que les `LEADER_LISTS_CAP` plus récentes.
+            # Le cœur commun (f_core) reste calculé sur `f_pairs` tout entier, et le
+            # `deckpack.json` produit par le lot C contient l'intégralité — c'est un
+            # plafond de présentation, pas de données.
+            total_lists = len(f_deck_rows)
+            display_rows = f_deck_rows[:LEADER_LISTS_CAP]
+            omitted = max(0, total_lists - LEADER_LISTS_CAP)
             sections.append({
                 "fslug": fslug,
                 "label": site.format_label(fslug),
                 "pairs": f_pairs,
+                "total_lists": total_lists,
+                "display_rows": display_rows,
+                "omitted": omitted,
                 "core": f_core,
                 "core_items": f_core_items,
                 "show_diff": f_show_diff,

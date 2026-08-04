@@ -85,6 +85,16 @@ class Deck:
         """Total hors leader (le Don!! n'est pas listé — implicite à l'import studio)."""
         return sum(qty for _, qty in self.cards)
 
+    @property
+    def importable(self) -> bool:
+        """Le simulateur accepterait-il ce deck ? 1 leader + exactement 50 cartes.
+
+        Renseigné à titre de diagnostic. Le filtrage se fait **en amont**, dans le dépôt de
+        données : un deck tronqué par une récupération incomplète n'a rien à faire dans un
+        pack, et l'écarter ici masquerait un défaut de scraping au lieu de le corriger.
+        """
+        return bool(self.leader_id) and self.total_cards == 50
+
 
 @dataclass(frozen=True)
 class Tournament:

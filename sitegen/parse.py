@@ -242,13 +242,20 @@ def load_site(packs_dir: Path) -> Site:
 
     # Un avertissement unique pour tout le corpus : les sets que `formats` ne sait
     # pas dater. Sans ça, l'apparition d'un nouveau set passerait inaperçue et
-    # fausserait les déductions de format en silence. Collecté sur l'ensemble des
-    # decklists, une fois, plutôt que par tournoi — c'est un signal global.
-    corpus_pool: set[str] = set()
+    # fausserait les déductions de format en silence.
+    #
+    # Restreint aux tournois dont le format n'a PAS pu être déduit : un set non
+    # daté n'est actionnable que s'il empêche effectivement un classement. Sur le
+    # corpus élargi, collecter sur tous les tournois listait 26 sets à chaque
+    # build alors que les 114 tournois étaient correctement classés — un
+    # avertissement qui se déclenche toujours n'avertit plus de rien.
+    unclassified_pool: set[str] = set()
     for t in tournaments:
+        if t.format:
+            continue
         for d in t.decks:
-            corpus_pool.update(formats.sets_in_text(d.text))
-    unknown = formats.unknown_sets(tuple(sorted(corpus_pool)))
+            unclassified_pool.update(formats.sets_in_text(d.text))
+    unknown = formats.unknown_sets(tuple(sorted(unclassified_pool)))
     if unknown:
         warnings.append(BuildWarning(
             scope="corpus",

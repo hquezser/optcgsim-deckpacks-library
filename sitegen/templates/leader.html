@@ -36,9 +36,9 @@
   {% endif %}
 
   <section class="decks">
-    <h3>{{ section.pairs | length }} liste(s) — par date décroissante</h3>
+    <h3>{{ section.total_lists }} liste(s) — par date décroissante</h3>
     <ol class="deck-list">
-      {% for t, d, delta in section.deck_rows %}
+      {% for t, d, delta in section.display_rows %}
       <li class="deck" id="{{ section.fslug }}-{{ d.slug }}">
         <details class="deck-details"{% if loop.first %} open{% endif %}>
           <summary class="deck-summary">
@@ -79,6 +79,10 @@
       </li>
       {% endfor %}
     </ol>
+    {% if section.omitted > 0 %}
+    <p class="decks-capped">{{ section.omitted }} autre(s) liste(s) omises sur
+      {{ section.total_lists }} — voir le pack complet pour l'intégralité.</p>
+    {% endif %}
   </section>
 </section>
 {% endfor %}
