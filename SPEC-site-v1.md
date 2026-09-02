@@ -132,16 +132,61 @@ leader exclu.
 
 **Format (« la méta »)** — `OP15`, `OP16`, `OP16.5`, `OP17`… C'est une propriété du
 **tournoi**, pas du deck : tous les decks d'un pack partagent le même environnement de jeu.
-Deux sources, dans cet ordre :
+Trois sources, dans cet ordre — **une déclaration bat toujours une déduction** :
 
-1. le **préfixe du nom de pack** (`"OP14.5 21st March 2026 - Regional Melbourne"` → `OP14.5`),
-   qui porte la casse et le point ;
+1. une **déclaration en tête du nom de pack**, sous ses deux formes réelles :
+   `"OP14.5 21st March 2026 - Regional Melbourne"` (Limitless, papier) et
+   `"[OP17] ChinoizeCup #104 Tuesday"` (ChinoizeCupStats, en ligne). Ancrée en tête, jamais
+   cherchée ailleurs dans le nom : un pseudo comme `OP17fan` suffirait sinon à étiqueter un
+   tournoi ;
 2. à défaut, un **tag** de deck de la forme `op\d+(\.\d+)?` (`op16`, `op14.5`), normalisé en
-   majuscules.
+   majuscules ;
+3. à défaut, une **déduction depuis le pool de cartes** (§ « Comment le format évolue »).
 
-`""` si aucune des deux ne donne rien — les tournois de ChinoizeCupStats sont dans ce cas
-aujourd'hui (leur seul tag est `op`). Un format inconnu **exclut** le tournoi des vues par
-format : mieux vaut ne pas le classer que le ranger au hasard.
+`""` si rien ne donne rien. Un format inconnu **exclut** le tournoi des vues par format —
+il reste visible sur l'accueil et sur sa propre page : mieux vaut ne pas le classer que le
+ranger au hasard.
+
+### Comment le format évolue dans le temps
+
+Le corpus doit suivre le calendrier de sorties sans intervention. Deux cas, et un seul
+demande une décision humaine.
+
+**Un nouveau booster est automatique, pour toujours.** `OPnn` ouvre le format `OPnn` : c'est
+structurel. OP18 sortira, les tournois qui le jouent se classeront en OP18, les rôles
+courant/à venir/passés suivront. Aucune ligne à ajouter nulle part.
+
+**Un format à décimale ne l'est pas**, et ce n'est pas un manque d'effort : ce sont des
+starter decks qui l'ouvrent (ST31–ST36 → OP16.5), et rien dans une decklist ne distingue
+« ce ST est légal dans le format courant » de « ce ST ouvre le suivant ». Quatre signaux ont
+été essayés sur les 134 tournois du corpus et **tous réfutés** :
+
+| Signal essayé | Ce que le corpus répond |
+|---|---|
+| Dériver le calendrier des tournois qui déclarent | 19/134 déclarent, tous en OP14.5–OP16 : ST01 et EB01 se datent « OP14.5 » |
+| Première apparition d'un set | ST14 apparaît le 2026-07-28 — c'est un starter ancien |
+| Cohorte (« plusieurs sets le même jour ») | ST35 arrive seul, ST36 seul : vrais sets OP16.5 |
+| Taux d'adoption | ST35 (vrai) 0,3 % ; ST14 (bruit) 1,8 % ; EB03 (bruit) 51,8 % |
+
+La raison de fond : **le corpus est un échantillon de decks joués**. L'absence d'un set n'a
+jamais voulu dire « pas encore légal », seulement « personne n'a fini en top 16 avec ».
+
+D'où le **monde clos** de `sitegen/formats.py` : plutôt qu'une liste ouverte de sets datés,
+où un set absent est muet, on déclare l'inverse — à `CALENDAR_HORIZON`, voici la liste
+**complète** des sets non-boosters légaux (`LEGAL_SETS_AT_HORIZON`). Un set hors de cette
+liste est donc *nécessairement* postérieur à l'horizon. La détection devient certaine, sans
+heuristique.
+
+**Ce qui se passe quand un set nouveau apparaît** : si le tournoi déclare son format, la
+déclaration tranche et rien ne change. S'il ne déclare rien, il reste **non classé** et le
+build émet un avertissement nommant le set, le nombre de tournois bloqués et la décision à
+prendre. Déduire quand même donnerait le format du booster le plus récent, ce qui fondrait
+un format neuf dans le précédent — précisément ce qui fabrique un « core » qu'aucun deck
+réel ne possède.
+
+La décision humaine tient en une ligne : ces sets ouvrent-ils un format à décimale (les
+ajouter à `FORMAT_OF_SET`) ou sont-ils légaux dans le format courant (les ajouter seulement
+à `LEGAL_SETS_AT_HORIZON`) ? Puis avancer `CALENDAR_HORIZON`.
 
 Le format est la condition de justesse de toute vue agrégée. Un cœur commun calculé sur
 deux formats mélangés décrit un deck qui n'a jamais existé : mesuré sur le corpus,

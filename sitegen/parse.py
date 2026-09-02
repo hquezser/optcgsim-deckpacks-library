@@ -38,7 +38,17 @@ _SLUG_DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})")
 # Source primaire : on conserve la casse et le point tels qu'écrits. Insensible à
 # la casse pour rester robuste face à un scraper qui écrirait `op16` en tête, mais
 # on retourne le texte original (le préfixe « porte la casse »).
-_FORMAT_NAME_RE = re.compile(r"^OP\d+(?:\.\d+)?", re.IGNORECASE)
+# Deux formes de déclaration, toutes deux ANCRÉES en tête du nom :
+#   « OP16 26th July 2026 - Treasure Cup Sofia »  (Limitless, circuit papier)
+#   « [OP17] ChinoizeCup #104 Tuesday »           (ChinoizeCupStats, circuit en ligne)
+# La seconde était ignorée : 12 tournois du corpus déclaraient leur format et on le jetait
+# pour le redéduire du pool. Les 12 déductions tombaient juste, donc rien ne l'a signalé —
+# mais c'est la source en ligne qui voit les nouveaux formats EN PREMIER, et une déclaration
+# vaut toujours mieux qu'une déduction.
+#
+# L'ancrage n'est pas négociable : sans lui, « ChinoizeCup #97 » suivi d'un joueur nommé
+# « OP17fan » ou un identifiant de carte dans le nom suffiraient à étiqueter le tournoi.
+_FORMAT_NAME_RE = re.compile(r"^\[?(OP\d+(?:\.\d+)?)\]?", re.IGNORECASE)
 
 # Format depuis un tag de deck : `op16`, `op14.5`. Le tag `op` nu (cas réel
 # ChinoizeCupStats) ne matche pas — il faut au moins un chiffre. Normalisé en
@@ -55,7 +65,7 @@ def parse_format(pack_name: str, tags: tuple[str, ...]) -> str:
     """
     m = _FORMAT_NAME_RE.match(pack_name)
     if m:
-        return m.group(0)
+        return m.group(1)
     for tag in tags:
         mt = _FORMAT_TAG_RE.fullmatch(tag)
         if mt:
@@ -196,7 +206,25 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
         pool: set[str] = set()
         for raw in raw_decks:
             pool.update(formats.sets_in_text(raw.get("text", "") or ""))
-        if pool:
+        nouveaux = formats.beyond_horizon(tuple(sorted(pool)))
+        if nouveaux:
+            # Le tournoi joue un set POSTÉRIEUR à l'horizon du calendrier et ne déclare
+            # rien. On ne peut pas savoir si ce set est simplement légal dans le format
+            # courant ou s'il en ouvre un nouveau — c'est une question de calendrier de
+            # sorties, pas de decklist. Déduire quand même donnerait le format du booster
+            # le plus récent, et fondrait en silence un format neuf dans le précédent :
+            # exactement ce qui fabrique un « cœur commun » qu'aucun deck réel ne possède.
+            #
+            # On laisse donc le tournoi NON CLASSÉ. Il reste visible sur l'accueil et sur sa
+            # propre page ; il sort seulement des vues par format, le temps qu'une ligne
+            # soit ajoutée à `formats.LEGAL_SETS_AT_HORIZON`.
+            warnings.append(BuildWarning(
+                scope=slug,
+                message=(f"non classé : joue {', '.join(nouveaux)}, postérieur à l'horizon "
+                         f"{formats.CALENDAR_HORIZON} du calendrier, et ne déclare aucun "
+                         f"format"),
+            ))
+        elif pool:
             fmt = formats.infer_format(tuple(sorted(pool)))
 
     # Circuit du tournoi : « online » (simulateur) ou « paper » (tournoi physique).
@@ -240,26 +268,35 @@ def load_site(packs_dir: Path) -> Site:
         tournaments.append(tournament)
         warnings.extend(w)
 
-    # Un avertissement unique pour tout le corpus : les sets que `formats` ne sait
-    # pas dater. Sans ça, l'apparition d'un nouveau set passerait inaperçue et
-    # fausserait les déductions de format en silence.
+    # Détection d'un changement de format en cours, pour tout le corpus.
     #
-    # Restreint aux tournois dont le format n'a PAS pu être déduit : un set non
-    # daté n'est actionnable que s'il empêche effectivement un classement. Sur le
-    # corpus élargi, collecter sur tous les tournois listait 26 sets à chaque
-    # build alors que les 114 tournois étaient correctement classés — un
-    # avertissement qui se déclenche toujours n'avertit plus de rien.
-    unclassified_pool: set[str] = set()
+    # Portée : les tournois QUE ÇA EMPÊCHE DE CLASSER. Un set neuf joué dans un tournoi qui
+    # déclare son format ne gêne personne — la déclaration a tranché. Un avertissement qui se
+    # déclenche à chaque build n'avertit plus de rien : la version précédente listait 26 sets
+    # anciens en permanence pendant que les 114 tournois étaient correctement classés.
+    nouveaux_sets: set[str] = set()
+    bloques: list[str] = []
     for t in tournaments:
         if t.format:
             continue
+        pool: set[str] = set()
         for d in t.decks:
-            unclassified_pool.update(formats.sets_in_text(d.text))
-    unknown = formats.unknown_sets(tuple(sorted(unclassified_pool)))
-    if unknown:
+            pool.update(formats.sets_in_text(d.text))
+        n = formats.beyond_horizon(tuple(sorted(pool)))
+        if n:
+            nouveaux_sets.update(n)
+            bloques.append(t.slug)
+    if nouveaux_sets:
+        listés = ", ".join(sorted(nouveaux_sets))
         warnings.append(BuildWarning(
             scope="corpus",
-            message=f"sets non datés dans formats.FORMAT_OF_SET : {', '.join(unknown)}",
+            message=(
+                f"NOUVEAU(X) SET(S) : {listés} — postérieur(s) à l'horizon "
+                f"{formats.CALENDAR_HORIZON}. {len(bloques)} tournoi(s) restent non classés. "
+                f"Décider si ces sets ouvrent un format à décimale (les ajouter à "
+                f"FORMAT_OF_SET) ou sont légaux dans le format courant (les ajouter "
+                f"seulement à LEGAL_SETS_AT_HORIZON), puis avancer CALENDAR_HORIZON."
+            ),
         ))
 
     return Site(tournaments=tuple(tournaments), warnings=tuple(warnings))

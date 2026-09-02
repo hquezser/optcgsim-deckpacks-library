@@ -88,7 +88,38 @@ jobs:
         env:
           PY: python
           BASE_URL: ${{ env.BASE_URL }}
-        run: ./orchestration/verify.sh
+        # `pipefail` n'est PAS actif par défaut dans un `run:` (GitHub lance `bash -e`).
+        # Sans lui, `verify.sh | tee` renvoie le code de sortie de `tee`, toujours 0 : un
+        # portillon rouge passerait pour vert et on déploierait un site non vérifié.
+        run: |
+          set -o pipefail
+          ./orchestration/verify.sh | tee /tmp/verify.log
+
+      # Un nouveau set de cartes est apparu et le calendrier ne sait pas le dater : les
+      # tournois concernés sortent des vues par format en attendant une décision humaine
+      # (cf. SPEC § « Comment le format évolue »). Ça NE DOIT PAS bloquer le déploiement —
+      # le site reste juste, il lui manque un classement — mais ça ne doit pas non plus
+      # rester au fond d'un log que personne n'ouvre. D'où une annotation sur le run et une
+      # ligne dans le résumé, visibles sans dérouler quoi que ce soit.
+      - name: Signaler un changement de format en cours
+        if: always()
+        working-directory: optcgsim-deckpacks-library
+        run: |
+          if grep -q 'NOUVEAU(X) SET(S)' /tmp/verify.log; then
+            ligne=$(grep 'NOUVEAU(X) SET(S)' /tmp/verify.log | head -1 | sed 's/^ *⚠ *//')
+            echo "::warning title=Changement de format en cours::$ligne"
+            {
+              echo "### ⚠ Changement de format en cours"
+              echo ""
+              echo "$ligne"
+              echo ""
+              echo "À trancher dans \`sitegen/formats.py\` : \`FORMAT_OF_SET\` si ces sets"
+              echo "ouvrent un format à décimale, \`LEGAL_SETS_AT_HORIZON\` seul sinon."
+              echo "Puis avancer \`CALENDAR_HORIZON\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Aucun set postérieur à l'horizon du calendrier." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:

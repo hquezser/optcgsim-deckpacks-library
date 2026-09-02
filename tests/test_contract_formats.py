@@ -51,7 +51,46 @@ def test_calendrier_des_starters():
 def test_set_inconnu_ne_devine_rien():
     assert F.format_of_set("ST99") is None
     assert F.format_of_set("EB03") is None      # non daté ici : trop ancien pour compter
-    assert F.unknown_sets(("OP16", "ST31", "EB03", "ST99")) == ("EB03", "ST99")
+
+
+def test_non_date_et_nouveau_sont_deux_choses_differentes():
+    """La distinction sur laquelle reposait un avertissement inutilisable.
+
+    `format_of_set` répond « à quel format ce set entre-t-il ? » — None pour les 26 sets
+    anciens dont la date n'a plus d'effet sur aucune déduction. `beyond_horizon` répond
+    « ce set est-il NOUVEAU ? » — et seul celui-là est actionnable. Les confondre listait
+    26 sets anciens à chaque build pendant que tous les tournois étaient bien classés, donc
+    un avertissement permanent, donc plus aucun avertissement.
+    """
+    assert F.format_of_set("EB03") is None          # non daté…
+    assert F.beyond_horizon(("EB03",)) == ()        # …mais parfaitement connu
+    assert F.beyond_horizon(("ST99",)) == ("ST99",)  # celui-là est vraiment neuf
+    assert F.unknown_sets is F.beyond_horizon        # l'ancien nom pointe sur la vraie question
+
+
+def test_un_nouveau_booster_ne_declenche_jamais_la_detection():
+    """C'est ce qui rend un nouveau format automatique et sans entretien.
+
+    `OPnn` ouvre `OPnn` structurellement. OP18 sortira sans qu'aucune ligne ne soit ajoutée
+    ici : les tournois qui le jouent se classeront en OP18, et les rôles suivront.
+    """
+    assert F.beyond_horizon(("OP18", "OP19", "OP42")) == ()
+    assert F.infer_format(("OP16", "OP18")) == "OP18"
+
+
+def test_horizon_et_liste_de_sets_bougent_ensemble():
+    """Garde-fou : avancer l'horizon sans déclarer les sets du nouveau format rendrait la
+    détection aveugle exactement au moment où elle sert.
+    """
+    assert F.format_key(F.CALENDAR_HORIZON) > (0, 0), "horizon illisible"
+    # Tout set daté dans FORMAT_OF_SET doit être couvert par le monde clos, sinon il serait
+    # signalé comme nouveau alors qu'on connaît sa date.
+    non_couverts = sorted(set(F.FORMAT_OF_SET) - F.LEGAL_SETS_AT_HORIZON)
+    assert not non_couverts, f"datés mais hors du monde clos : {non_couverts}"
+    # Et aucun set daté ne doit être postérieur à l'horizon annoncé.
+    trop_recents = sorted(s for s, f in F.FORMAT_OF_SET.items()
+                          if F.format_key(f) > F.format_key(F.CALENDAR_HORIZON))
+    assert not trop_recents, f"postérieurs à l'horizon {F.CALENDAR_HORIZON} : {trop_recents}"
 
 
 def test_sets_in_text():

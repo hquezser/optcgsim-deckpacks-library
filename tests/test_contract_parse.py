@@ -89,6 +89,27 @@ def test_parse_format_repli_sur_les_tags():
     assert parse.parse_format("Tournoi sans préfixe", ("op14.5",)) == "OP14.5"
 
 
+def test_parse_format_lit_la_declaration_entre_crochets():
+    """La forme de ChinoizeCupStats — jetée jusqu'au 2026-09-03.
+
+    12 tournois du corpus déclarent `[OP17] …` et on redéduisait leur format du pool. Les 12
+    déductions tombaient juste, donc rien ne le signalait ; mais c'est la source EN LIGNE qui
+    voit les nouveaux formats en premier, et une déclaration bat toujours une déduction.
+    """
+    assert parse.parse_format("[OP17] ChinoizeCup #104 Tuesday", ()) == "OP17"
+    assert parse.parse_format("[OP14] Christmas ChinoizeCup", ()) == "OP14"
+    assert parse.parse_format("[op16.5] ChinoizeCup #96", ()) == "op16.5"
+
+
+def test_la_declaration_reste_ancree_en_tete():
+    """Sans ancrage, un `OP17` n'importe où dans le nom étiquetterait le tournoi — un pseudo
+    de joueur, un identifiant de carte. On ne lit une déclaration qu'à la place où les deux
+    sources en mettent une.
+    """
+    assert parse.parse_format("ChinoizeCup #97 - won by OP17fan", ()) == ""
+    assert parse.parse_format("Treasure Cup (format OP16)", ()) == ""
+
+
 def test_parse_format_inconnu_plutot_que_devine():
     """`op` nu (cas réel de ChinoizeCupStats) ne désigne aucun format : ne rien inventer."""
     assert parse.parse_format("CHINOIZECUP #200", ("meta", "online", "op", "2026")) == ""
@@ -202,3 +223,71 @@ def test_load_site_echoue_sur_corpus_illisible(tmp_path):
     (bad / "deckpack.json").write_text("{ ceci n'est pas du json")
     with pytest.raises((OSError, ValueError)):
         parse.load_site(tmp_path)
+
+
+def _ecrire_pack(racine, slug, nom, textes, tags=("meta", "online")):
+    import json
+    d = racine / slug
+    d.mkdir(parents=True)
+    (d / "deckpack.json").write_text(json.dumps({
+        "schema_version": 1,
+        "name": nom,
+        "author": "chinoizecup-scraper",
+        "decks": [{"name": f"A — J{i} ({i+1})", "tags": list(tags), "text": t}
+                  for i, t in enumerate(textes)],
+    }), encoding="utf-8")
+
+
+def test_un_set_posterieur_a_l_horizon_laisse_le_tournoi_non_classe(tmp_path):
+    """Le comportement qui protège un format réel d'être pollué par le suivant.
+
+    Avant : un tournoi muet jouant un set inconnu se voyait déduire le format de son booster
+    le plus récent — un OP17.5 naissant se fondait donc en silence dans OP17, et le « core »
+    d'OP17 décrivait des decks qui n'ont jamais existé. La déduction était fausse ET
+    invisible.
+
+    Maintenant : non classé, et signalé. Le tournoi reste consultable, il sort seulement des
+    vues par format le temps qu'une ligne soit ajoutée au calendrier.
+    """
+    _ecrire_pack(tmp_path, "2026-11-02-chinoizecup-200",
+                 "ChinoizeCup #200 Monday", ["1xOP17-001\n4xST37-004\n4xOP17-020"])
+    site = parse.load_site(tmp_path)
+    t = site.tournaments[0]
+
+    assert t.format == "", "le tournoi a été classé alors que son pool est indatable"
+    assert len(t.decks) == 1, "le tournoi doit rester lisible, seulement pas classé"
+
+    corpus = [w for w in site.warnings if w.scope == "corpus"]
+    assert corpus, "aucun avertissement : un nouveau set serait passé inaperçu"
+    msg = corpus[0].message
+    assert "ST37" in msg, "l'avertissement ne nomme pas le set en cause"
+    assert "OP17" not in msg.split("horizon")[0], "il ne doit surtout pas proposer un format"
+
+
+def test_une_declaration_explicite_prime_sur_un_set_inconnu(tmp_path):
+    """La contrepartie : un set neuf ne doit pas déclasser un tournoi qui, lui, a déclaré.
+
+    La déclaration a déjà tranché la question que le calendrier ne sait pas trancher. Faire
+    l'inverse ferait disparaître des vues par format les tournois les mieux renseignés du
+    corpus, exactement quand un nouveau format démarre.
+    """
+    _ecrire_pack(tmp_path, "2026-11-03-chinoizecup-201",
+                 "[OP17.5] ChinoizeCup #201 Tuesday", ["1xOP17-001\n4xST37-004"])
+    site = parse.load_site(tmp_path)
+
+    assert site.tournaments[0].format == "OP17.5"
+    assert not [w for w in site.warnings if w.scope == "corpus"], \
+        "un tournoi déclaré ne doit pas déclencher l'alerte de nouveau set"
+
+
+def test_pas_d_alerte_permanente_sur_les_sets_anciens(tmp_path):
+    """L'avertissement doit rester silencieux en régime normal, sinon il ne veut plus rien
+    dire. La version précédente listait 26 sets anciens à CHAQUE build alors que les 114
+    tournois du corpus étaient tous correctement classés.
+    """
+    _ecrire_pack(tmp_path, "2026-07-16-chinoizecup-90",
+                 "ChinoizeCup #90 Wednesday", ["1xOP15-058\n4xEB03-012\n4xST31-004"])
+    site = parse.load_site(tmp_path)
+
+    assert site.tournaments[0].format == "OP16.5", "ST31 doit toujours classer en OP16.5"
+    assert not [w for w in site.warnings if w.scope == "corpus"]
