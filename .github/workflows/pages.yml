@@ -1,0 +1,94 @@
+name: Déployer sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Le corpus vit dans un AUTRE dépôt : le site doit pouvoir être redéployé quand les
+  # données changent, pas seulement quand le générateur change. Depuis
+  # optcgsim-deckpacks-data :
+  #   gh api repos/hquezser/optcgsim-deckpacks-library/dispatches \
+  #     -f event_type=corpus-mis-a-jour
+  repository_dispatch:
+    types: [corpus-mis-a-jour]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois, et on ne coupe pas celui en cours : un déploiement
+# interrompu laisse le site dans un état indéterminé.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  BASE_URL: https://hquezser.github.io/optcgsim-deckpacks-library
+
+jobs:
+  construire:
+    name: Vérifier sur le corpus réel, puis construire
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: optcgsim-deckpacks-library
+
+      # Les liens inter-projets sont des chemins relatifs entre voisins : on reconstitue la
+      # fraternité des dossiers, sinon verify.sh ne trouve ni le validateur de la spec, ni
+      # le studio, ni le corpus.
+      - uses: actions/checkout@v4
+        with:
+          repository: hquezser/optcgsim-deckpacks
+          path: optcgsim-deckpacks
+
+      - uses: actions/checkout@v4
+        with:
+          repository: hquezser/optcgsim-studio
+          path: optcgsim-studio
+
+      - uses: actions/checkout@v4
+        with:
+          repository: hquezser/optcgsim-deckpacks-data
+          path: optcgsim-deckpacks-data
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        working-directory: optcgsim-deckpacks-library
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      # LE garde-fou de la publication. Contrairement à la CI ordinaire — qui tourne sur les
+      # fixtures et vérifie le générateur — celui-ci tourne sur le corpus réel et vérifie la
+      # DONNÉE : chaque pack publié doit être réellement importable par le simulateur.
+      # Publier un deck qui n'importe pas casserait la seule promesse du site.
+      #
+      # Pas d'étape de construction séparée après celui-ci : verify.sh construit déjà
+      # `dist/` avec ce BASE_URL, et le publier tel quel garantit qu'on déploie EXACTEMENT
+      # ce qui a été vérifié. Reconstruire serait redondant et pourrait diverger.
+      - name: verify.sh sur le corpus réel (construit dist/)
+        working-directory: optcgsim-deckpacks-library
+        env:
+          PY: python
+          BASE_URL: ${{ env.BASE_URL }}
+        run: ./orchestration/verify.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: optcgsim-deckpacks-library/dist
+
+  deployer:
+    name: Déployer
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4
