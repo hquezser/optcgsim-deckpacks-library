@@ -1,8 +1,11 @@
 # optcgsim-deckpacks-library — guide agent
 
 Générateur de site statique qui expose les deckpacks scrapés comme **rampe d'accès vers
-OPTCGSim**. Le contrat exécutable est [SPEC-site-v1.md](SPEC-site-v1.md) ; les notes
-produit sont [IDEAS-library-site.md](IDEAS-library-site.md).
+OPTCGSim**. Le contrat exécutable est [SPEC-site-v1.md](SPEC-site-v1.md).
+
+Les notes produit (`IDEAS-library-site.md`) restent **hors du dépôt**, volontairement : elles
+raisonnent sur l'exposition juridique de tiers, ce qui n'a pas à être publié. Elles vivent
+en local à la racine du dépôt et sont ignorées par git.
 
 ## Rôle dans l'écosystème
 
