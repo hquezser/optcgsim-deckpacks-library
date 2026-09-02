@@ -291,11 +291,14 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     # --- favicon.svg --------------------------------------------------------
     # Icône de site écrite à la main, servie depuis le même domaine. Seule exception
     # à « aucun asset » (cf. SPEC § « Icône de site ») : l'invariant vise les assets de
-    # CARTES sous copyright, pas une icône de projet. Aucune référence externe dedans
-    # (pas même xmlns, qui contient "http" — le test l'interdit, et le navigateur infère
-    # le namespace depuis le type MIME image/svg+xml).
+    # CARTES sous copyright, pas une icône de projet.
+    #
+    # `xmlns` est OBLIGATOIRE pour un SVG autonome servi en image/svg+xml : sans lui le
+    # navigateur refuse de le rendre (naturalWidth == 0). L'URI de namespace est un
+    # identifiant que le navigateur ne récupère jamais — ce n'est pas une sous-ressource
+    # (le test l'autorise explicitement, à distinguer de `href`/`src`/`xlink:href`/`url()`).
     favicon = (
-        '<svg viewBox="0 0 32 32">\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">\n'
         '  <rect width="32" height="32" rx="6" fill="#0d1117"/>\n'
         '  <path d="M7 22 L13 16 L7 10" stroke="#58a6ff" stroke-width="2.5" '
         'fill="none" stroke-linecap="round" stroke-linejoin="round"/>\n'
