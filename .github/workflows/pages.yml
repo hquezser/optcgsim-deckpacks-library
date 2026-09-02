@@ -4,11 +4,23 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # Le corpus vit dans un AUTRE dépôt : le site doit pouvoir être redéployé quand les
-  # données changent, pas seulement quand le générateur change. Depuis
-  # optcgsim-deckpacks-data :
-  #   gh api repos/hquezser/optcgsim-deckpacks-library/dispatches \
-  #     -f event_type=corpus-mis-a-jour
+
+  # Le corpus vit dans un AUTRE dépôt : le site doit se rafraîchir quand les DONNÉES
+  # changent, pas seulement quand le générateur change.
+  #
+  # On tire au lieu d'être poussé, et c'est délibéré : un `repository_dispatch` venant du
+  # dépôt de données exige un token inter-dépôts (le GITHUB_TOKEN d'une Action ne peut pas
+  # déclencher un workflow ailleurs), donc un secret à créer, à porter au bon périmètre et à
+  # renouveler à chaque expiration. Un horaire propre n'a besoin de rien : le GITHUB_TOKEN
+  # de CE dépôt suffit à déployer ses propres Pages.
+  #
+  # 05:45 UTC, après le scraping de 05:12 dans optcgsim-deckpacks-data. Le corpus est
+  # récupéré à chaque exécution, donc un scraping manqué ne décale rien.
+  schedule:
+    - cron: "45 5 * * *"
+
+  # Conservé pour qui voudrait un redéploiement immédiat après un scraping, mais ce n'est
+  # plus le chemin nominal — et il demande un token, contrairement à l'horaire ci-dessus.
   repository_dispatch:
     types: [corpus-mis-a-jour]
 
