@@ -6,18 +6,18 @@
 
 <section class="page-head">
   <h1>{{ format_label }}</h1>
-  {% if role_label %}<p class="format-role-label">{{ role_label }}</p>{% endif %}
-  <p class="page-meta">{{ tournaments | length }} {{ tournaments | length | fr_plur("tournoi") }} — {{ total_lists }} {{ total_lists | fr_plur("liste") }}.</p>
+  {% if role_label %}<p class="format-role-label role-{{ role_key }}">{{ role_label }}</p>{% endif %}
+  <p class="page-meta">{{ tournaments | length }} {{ tournaments | length | plur("tournament") }} — {{ total_lists }} {{ total_lists | plur("list") }}.</p>
 </section>
 
 <section class="archetypes">
-  <h2>Archétypes — par nombre de listes décroissant</h2>
+  <h2>Archetypes — by list count, descending</h2>
   <ul class="archetype-list">
     {% for aslug, label, count in archetype_rows %}
     <li>
       <a href="{{ rel }}leaders/{{ aslug }}/">
         <span class="a-label">{{ label }}</span>
-        <span class="a-count">{{ count }} {{ count | fr_plur("liste") }}</span>
+        <span class="a-count">{{ count }} {{ count | plur("list") }}</span>
       </a>
     </li>
     {% endfor %}

@@ -1,11 +1,11 @@
 {% extends "_base.html" %}
-{% block title %}OPTCGSim deckpacks — tournois récents{% endblock %}
+{% block title %}OPTCGSim deckpacks — recent tournaments{% endblock %}
 {% block content %}
 
 <section class="intro">
-  <h1>Tournois récents</h1>
-  <p>Une rampe d'accès entre le méta compétitif et OPTCGSim : chaque page expose une
-    commande <code>studio decks import-pack</code> copiable en un geste, à coller dans
+  <h1>Recent tournaments</h1>
+  <p>A bridge between the competitive meta and OPTCGSim: each page exposes a
+    <code>studio decks import-pack</code> command you can copy in one gesture and paste into
     <a href="https://github.com/hquezser/optcgsim-studio" rel="noreferrer nofollow"
       target="_blank">optcgsim-studio</a>.</p>
 </section>
@@ -13,9 +13,9 @@
 {% if format_groups %}
 <section class="formats">
   <h2>Formats</h2>
-  <p>Le format (« la méta ») est le premier repère qu'un joueur cherche. Le simulateur
-    reçoit les sets avant le circuit papier : un format peut donc être déjà joué en
-    ligne quand les tournois papier en sont encore au précédent.</p>
+  <p>The format is the first thing a player looks for. The simulator receives sets
+    before the paper circuit, so a format may already be played online while paper
+    tournaments are still on the previous one.</p>
   {% for role_key, role_title, rows in format_groups %}
     {% if rows %}
     <section class="format-role format-{{ role_key }}">
@@ -25,7 +25,7 @@
         <li>
           <a href="{{ rel }}formats/{{ fslug }}/">
             <span class="f-label">{{ label }}</span>
-            <span class="f-count">{{ n_tour }} {{ n_tour | fr_plur("tournoi") }} · {{ n_lists }} {{ n_lists | fr_plur("liste") }}</span>
+            <span class="f-count">{{ n_tour }} {{ n_tour | plur("tournament") }} · {{ n_lists }} {{ n_lists | plur("list") }}</span>
           </a>
         </li>
         {% endfor %}
@@ -37,21 +37,21 @@
 {% endif %}
 
 <section class="meta-link">
-  <h2>Méta courant</h2>
-  <p><a href="{{ rel }}meta/">Voir le pack méta</a>
-    — {{ meta_count }} {{ meta_count | fr_plur("liste") }} {{ meta_count | fr_plur("sélectionnée") }} sur les 60 derniers jours.</p>
+  <h2>Current meta</h2>
+  <p><a href="{{ rel }}meta/">View the meta pack</a>
+    — {{ meta_count }} {{ meta_count | plur("list") }} selected over the last 60 days.</p>
 </section>
 
 <section class="tournaments">
-  <h2>{{ recent_tournaments | length }} {{ recent_tournaments | length | fr_plur("tournoi") }} les plus récents</h2>
+  <h2>{{ recent_tournaments | length }} {{ recent_tournaments | length | plur("tournament") }} — most recent first</h2>
   <ol class="tournament-list">
     {% for t in recent_tournaments %}
     <li>
       <a href="{{ rel }}tournois/{{ t.slug }}/">
         <span class="t-name">{{ t.name }}</span>
-        <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+        <span class="t-date">{{ t.date if t.date else "unknown date" }}</span>
         {% if t.format %}<span class="t-format">{{ t.format }}</span>{% endif %}
-        <span class="t-count">{{ t.decks | length }} {{ t.decks | length | fr_plur("deck") }}</span>
+        <span class="t-count">{{ t.decks | length }} {{ t.decks | length | plur("deck") }}</span>
       </a>
     </li>
     {% endfor %}
@@ -59,14 +59,14 @@
 </section>
 
 <section class="archetypes">
-  <h2>Archétypes</h2>
-  <p>Triés par nombre de listes décroissant.</p>
+  <h2>Archetypes</h2>
+  <p>Sorted by list count, descending.</p>
   <ul class="archetype-list">
     {% for aslug, label, count in archetype_rows %}
     <li>
       <a href="{{ rel }}leaders/{{ aslug }}/">
         <span class="a-label">{{ label }}</span>
-        <span class="a-count">{{ count }} {{ count | fr_plur("liste") }}</span>
+        <span class="a-count">{{ count }} {{ count | plur("list") }}</span>
       </a>
     </li>
     {% endfor %}

@@ -7,15 +7,15 @@
 <section class="page-head">
   <h1>{{ tournament.name }}</h1>
   <p class="page-meta">
-    <span class="t-date">{{ tournament.date if tournament.date else "date inconnue" }}</span>
-    {% if tournament.author %}<span class="t-author">source : {{ tournament.author }}</span>{% endif %}
-    <span class="t-count">{{ tournament.decks | length }} {{ tournament.decks | length | fr_plur("deck") }}</span>
+    <span class="t-date">{{ tournament.date if tournament.date else "unknown date" }}</span>
+    {% if tournament.author %}<span class="t-author">source: {{ tournament.author }}</span>{% endif %}
+    <span class="t-count">{{ tournament.decks | length }} {{ tournament.decks | length | plur("deck") }}</span>
   </p>
-  {% if tournament.description %}<p class="t-source">Source : {{ tournament.description | urls_only }}</p>{% endif %}
+  {% if tournament.description %}<p class="t-source">Source: {{ tournament.description | urls_only }}</p>{% endif %}
 </section>
 
 <section class="decks">
-  <h2>Decks — par placement croissant</h2>
+  <h2>Decks — by placement ascending</h2>
   <ol class="deck-list">
     {% for d in decks %}
     <li class="deck" id="{{ d.slug }}">
@@ -31,7 +31,7 @@
           </span>
           {% if d.player %}<span class="d-player">{{ d.player }}</span>{% endif %}
           <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
-            — <span class="qty">{{ d.total_cards }}</span>/{{ deck_size }} cartes</span>
+            — <span class="qty">{{ d.total_cards }}</span>/{{ deck_size }} cards</span>
         </summary>
 
         {% if d.parsed %}
@@ -42,24 +42,24 @@
             {% endfor %}
           </ul>
           <details class="decklist-native" open>
-            <summary>Decklist native — copier-coller vers le simulateur</summary>
+            <summary>Decklist — copy-paste to the simulator</summary>
             <pre class="decklist"><code>{{ d.text }}</code></pre>
           </details>
           <details class="deck-import-single">
-            <summary>Importer ce deck seul via studio</summary>
+            <summary>Import this deck alone via studio</summary>
             <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ tournament.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
           </details>
         </div>
         {% else %}
         <div class="deck-body deck-unparsed">
-          <p class="d-raw">Nom non structuré : <code>{{ d.raw_name }}</code></p>
+          <p class="d-raw">Unstructured name: <code>{{ d.raw_name }}</code></p>
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
             <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
             {% endfor %}
           </ul>
           <details class="decklist-native" open>
-            <summary>Decklist native — copier-coller vers le simulateur</summary>
+            <summary>Decklist — copy-paste to the simulator</summary>
             <pre class="decklist"><code>{{ d.text }}</code></pre>
           </details>
         </div>

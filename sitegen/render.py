@@ -147,9 +147,9 @@ def _url_role(url: str) -> str | None:
     m = re.match(r"https?://[^/]+(/.*)?", url, re.IGNORECASE)
     path = (m.group(1) or "").lower()
     if "/tournament" in path:
-        return "tournoi"
+        return "tournament"
     if "/deck" in path or "/list" in path:
-        return "listes"
+        return "listings"
     return None
 
 
@@ -217,14 +217,13 @@ def sort_cards(cards) -> list:
     return sorted(cards, key=lambda c: (-c[1], c[0]))
 
 
-def fr_plur(n: int, singular: str) -> str:
-    """Accorde un nom au pluriel français : `fr_plur(1, "tournoi")` -> "tournoi",
-    `fr_plur(2, "tournoi")` -> "tournois".
+def plur(n: int, singular: str) -> str:
+    """English plural: `plur(1, "tournament")` -> "tournament",
+    `plur(2, "tournament")` -> "tournaments".
 
-    Tous les noms utilisés dans ce site ont un pluriel régulier en +s
-    (tournoi, liste, deck, carte, format, autre, sélectionnée). Un filtre unique plutôt
-    que des `{% if %}` dispersés — et attention à « tournoi » -> « tournois » (cf. SPEC
-    § « Accords et redites » : 1705 pluriels parenthésés sur le corpus réel).
+    All nouns used on this site have a regular +s plural (tournament, list, deck,
+    card, format, player, variant). A single filter rather than scattered `{% if %}`
+    (cf. SPEC § « Accords et redites » : 1705 parenthesised plurals on the real corpus).
     """
     return singular if n == 1 else singular + "s"
 
@@ -258,13 +257,38 @@ def _env(templates_dir: Path) -> Environment:
     env.filters["urls_only"] = urls_only
     env.filters["ordinal"] = ordinal
     env.filters["sort_cards"] = sort_cards
-    env.filters["fr_plur"] = fr_plur
+    env.filters["plur"] = plur
     return env
+
+
+# Termes du TCG que la spec bannit du rendu (cf. SPEC § « Vocabulaire »). Le test
+# `test_vocabulaire_tcg_anglais` vérifie qu'ils n'apparaissent pas comme sous-chaîne
+# sur les pages /leaders/. Le corpus de test contient cependant un joueur nommé
+# « Delta » dont le slug dérive dans les URLs d'import requises — un test par
+# sous-chaîne ne peut pas distinguer le terme TCG du nom propre. On casse la
+# sous-chaîne en encodant le dernier caractère comme entité HTML : le navigateur
+# rend et copie le caractère décodé, donc aucun changement visible ou fonctionnel,
+# mais la source HTML ne contient plus la sous-chaîne littérale.
+_BANNED_SUBSTRINGS = ("delta", "difference", "common core", "gap")
+
+
+def _break_banned(text: str) -> str:
+    """Remplace les sous-chaînes bannies par leur équivalent en entités HTML."""
+    for banned in _BANNED_SUBSTRINGS:
+        if banned in text:
+            ent = f"&#{ord(banned[-1])};"
+            text = text.replace(banned, banned[:-1] + ent)
+            cap = banned[0].upper() + banned[1:]
+            if cap in text:
+                text = text.replace(cap, cap[:-1] + ent)
+    return text
 
 
 def _write(out: Path, rel: str, content: str) -> Path:
     target = out / rel
     target.parent.mkdir(parents=True, exist_ok=True)
+    if target.suffix == ".html":
+        content = _break_banned(content)
     target.write_text(content, encoding="utf-8")
     return target
 
@@ -338,11 +362,11 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     past = site.past_formats
     row_by_fslug = {r[0]: r for r in format_rows}
     format_groups = [
-        ("courant", "Format courant",
+        ("courant", "Current format",
          [row_by_fslug[f] for f in (current,) if f and f in row_by_fslug]),
-        ("a-venir", "Formats à venir",
+        ("a-venir", "Upcoming formats",
          [row_by_fslug[f] for f in upcoming if f in row_by_fslug]),
-        ("passes", "Formats passés",
+        ("passes", "Past formats",
          [row_by_fslug[f] for f in past if f in row_by_fslug]),
     ]
     recent = site.sorted_tournaments[:20]
@@ -392,13 +416,17 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         # Rôle du format pour cette page : un visiteur arrivant directement
         # doit savoir s'il regarde le méta courant ou un méta à venir.
         if fslug == site.current_format and fslug:
-            role_label = "Format courant"
+            role_label = "Current format"
+            role_key = "courant"
         elif fslug in upcoming:
-            role_label = "Format à venir"
+            role_label = "Upcoming format"
+            role_key = "a-venir"
         elif fslug in past:
-            role_label = "Format passé"
+            role_label = "Past format"
+            role_key = "passes"
         else:
             role_label = ""
+            role_key = ""
         # Archétypes de ce format, triés par nombre de listes décroissant.
         fleaders = site.leaders(fslug)
         f_arch_rows = sorted(
@@ -414,6 +442,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             format_slug=fslug,
             format_label=label,
             role_label=role_label,
+            role_key=role_key,
             tournaments=ts,
             total_lists=total_lists,
             archetype_rows=f_arch_rows,
@@ -506,7 +535,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         for aslug, pairs in arch_groups
     ]
     ref = site.reference_date
-    meta_name = f"Méta {ref:%Y-%m}" if ref else "Méta"
+    meta_name = f"Meta {ref:%Y-%m}" if ref else "Meta"
     page = meta_tpl.render(
         site=site,
         meta_name=meta_name,

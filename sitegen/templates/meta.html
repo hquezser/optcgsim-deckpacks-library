@@ -6,16 +6,16 @@
 
 <section class="page-head">
   <h1>{{ meta_name }}</h1>
-  <p class="page-meta">{{ meta_pairs | length }} {{ meta_pairs | length | fr_plur("liste") }} — fenêtre 60 jours,
-    placement ≤ 8, plafond 40.</p>
+  <p class="page-meta">{{ meta_pairs | length }} {{ meta_pairs | length | plur("list") }} — 60-day window,
+    placement ≤ 8, cap 40.</p>
 </section>
 
 <section class="meta-groups">
-  <h2>Composition par archétype</h2>
+  <h2>Composition by archetype</h2>
   {% for aslug, label, pairs in meta_groups %}
   <section class="meta-group">
     <h3><a href="{{ rel }}leaders/{{ aslug }}/">{{ label }}</a>
-      <span class="a-count">{{ pairs | length }} {{ pairs | length | fr_plur("liste") }}</span></h3>
+      <span class="a-count">{{ pairs | length }} {{ pairs | length | plur("list") }}</span></h3>
     <ol class="deck-list compact">
       {% for t, d in pairs %}
       <li class="deck" id="meta-{{ aslug }}-{{ d.slug }}">
@@ -27,7 +27,7 @@
           </summary>
           <p class="d-provenance">
             <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
-            — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+            — <span class="t-date">{{ t.date if t.date else "unknown date" }}</span>
           </p>
           <div class="deck-body">
             <ul class="card-list">

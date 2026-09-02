@@ -4,12 +4,12 @@
 
 <section class="page-head">
   <h1>{{ archetype_label }}</h1>
-  <p class="page-meta">{{ pairs | length }} {{ pairs | length | fr_plur("liste") }} — tous tournois confondus,
-    {{ sections | length }} {{ sections | length | fr_plur("format") }}.</p>
-  <p class="page-help">Chaque liste porte sa propre commande d'import et sa decklist native
-    copiable d'un geste. L'inventaire complet tous formats confondus est proposé en bas de
-    page — c'est un inventaire, pas l'action utile : un archétype se joue en
-    {{ pairs | length }} {{ pairs | length | fr_plur("variante") }} à quelques cartes près.</p>
+  <p class="page-meta">{{ pairs | length }} {{ pairs | length | plur("list") }} — across all tournaments,
+    {{ sections | length }} {{ sections | length | plur("format") }}.</p>
+  <p class="page-help">Each list carries its own import command and a native decklist
+    you can copy in one gesture. The full inventory across all formats is offered at the
+    bottom — it's an inventory, not the useful action: an archetype is played in
+    {{ pairs | length }} {{ pairs | length | plur("variant") }} within a few cards.</p>
 </section>
 
 {% for section in sections %}
@@ -17,7 +17,7 @@
   <h2>{{ section.label }}</h2>
 
   <section class="import-block import-compact">
-    <p class="import-help">Importer ce format seul dans
+    <p class="import-help">Import this format alone into
       <a href="https://github.com/hquezser/optcgsim-studio" rel="noreferrer nofollow"
         target="_blank">optcgsim-studio</a>.</p>
     <pre class="import-cmd"><code>{{ import_command(base_url, section.pack_url) }}</code></pre>
@@ -25,9 +25,9 @@
 
   {% if section.show_diff %}
   <section class="core-section">
-    <details class="core-cards">
-      <summary>Cœur commun — {{ section.core_items | length }} cartes
-        <span class="core-hint">(présent dans ≥ 80 % des listes)</span></summary>
+    <details class="core-cards" data-core="{{ section.core_items | length }} carte">
+      <summary>Core — {{ section.core_items | length }} cards
+        <span class="core-hint">(present in ≥ 80% of lists)</span></summary>
       <ul class="card-list">
         {% for card_id, qty in section.core_items %}
         <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
@@ -38,7 +38,7 @@
   {% endif %}
 
   <section class="decks">
-    <h3>{{ section.total_lists }} {{ section.total_lists | fr_plur("liste") }} — par date décroissante</h3>
+    <h3>{{ section.total_lists }} {{ section.total_lists | plur("list") }} — most recent first</h3>
     <ol class="deck-list">
       {% for t, d, delta in section.display_rows %}
       {% set conv_players = section.converging.get(d.signature) %}
@@ -48,15 +48,18 @@
             <span class="d-place place">{{ d.placement | ordinal }}</span>
             <span class="d-player">{{ d.player }}</span>
             <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
-              — {{ d.total_cards }}/{{ deck_size }} cartes</span>
-            {% if section.show_diff %}<span class="d-delta-tag">{{ delta | length }} {{ delta | length | fr_plur("carte") }} d'écart</span>{% endif %}
+              — {{ d.total_cards }}/{{ deck_size }} cards</span>
+            {% if section.show_diff %}<span class="d-var-tag">{{ delta | length }} flex</span>{% endif %}
           </summary>
           {% if conv_players %}
-          <p class="converg-notice">{{ conv_players | length }} {{ conv_players | length | fr_plur("joueur") }} jouent cette liste au caractère près.</p>
+          <p class="converg-notice">
+            <span class="converg-n" data-label="{{ conv_players | length }} joueur">{{ conv_players | length }}</span>
+            {{ conv_players | length | plur("player") }} run this list.
+          </p>
           {% endif %}
           <p class="d-provenance">
             <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
-            — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>
+            — <span class="t-date">{{ t.date if t.date else "unknown date" }}</span>
           </p>
           <div class="deck-body">
             {% if section.show_diff %}
@@ -65,12 +68,12 @@
               {% for card_id, qty_deck, qty_core in delta %}
               <li class="{% if qty_core == 0 %}d-add{% else %}d-adjust{% endif %}">
                 <code><span class="qty">{{ qty_deck }}</span>x {{ card_id }}</code>
-                {% if qty_core > 0 %}<span class="d-core-qty">(cœur {{ qty_core }}x)</span>{% endif %}
+                {% if qty_core > 0 %}<span class="d-core-qty">(core {{ qty_core }}x)</span>{% endif %}
               </li>
               {% endfor %}
             </ul>
             {% else %}
-            <p class="d-delta-zero">Identique au cœur commun.</p>
+            <p class="d-var-zero">Identical to core.</p>
             {% endif %}
             {% else %}
             <ul class="card-list">
@@ -80,7 +83,7 @@
             </ul>
             {% endif %}
             <details class="deck-import-single">
-              <summary>Importer ce deck seul via studio</summary>
+              <summary>Import this deck alone via studio</summary>
               <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ t.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
             </details>
           </div>
@@ -89,19 +92,19 @@
       {% endfor %}
     </ol>
     {% if section.omitted > 0 %}
-    <p class="decks-capped">{{ section.omitted }} {{ section.omitted | fr_plur("autre") }} {{ section.omitted | fr_plur("liste") }} omise{{ "" if section.omitted == 1 else "s" }} sur
-      {{ section.total_lists }} — voir le pack complet pour l'intégralité.</p>
+    <p class="decks-capped">{{ section.omitted }} more {{ section.omitted | plur("list") }} omitted out of
+      {{ section.total_lists }} — see the full pack for the entirety.</p>
     {% endif %}
   </section>
 </section>
 {% endfor %}
 
 <section class="import-block import-relegue">
-  <h2 class="import-title">Inventaire complet — tous formats confondus</h2>
-  <p class="import-help">À n'utiliser que si vous voulez vraiment l'intégralité : ce pack
-    contient {{ pairs | length }} {{ pairs | length | fr_plur("liste") }} tous formats
-    confondus, soit des decks joués dans des environnements différents. Préférez
-    l'import par deck ci-dessus, ou l'import par format de chaque section.</p>
+  <h2 class="import-title">Full inventory — all formats</h2>
+  <p class="import-help">Only use this if you really want everything: this pack contains
+    {{ pairs | length }} {{ pairs | length | plur("list") }} across all formats — decks played in
+    different environments. Prefer the per-deck import above, or the per-format import in
+    each section.</p>
   <pre class="import-cmd"><code>{{ import_command(base_url, pack_url) }}</code></pre>
 </section>
 

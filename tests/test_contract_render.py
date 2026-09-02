@@ -245,6 +245,28 @@ def test_vocabulaire_tcg_anglais(built):
         assert banni.lower() not in page.lower(), f"« {banni} » : préférer core/flex"
 
 
+def test_anglais_sans_calques_du_francais(built):
+    """Les tests peuvent passer avec un anglais mot-à-mot. Ces tournures-là sont des
+    traductions littérales repérées sur le rendu, pas des hypothèses.
+
+    « in one gesture » vient de « en un geste » — on dit « in one click ». « is offered »
+    vient de « est offert » — on dit « is available ». Et « native decklist » est banni par
+    le glossaire : c'est du vocabulaire de développeur, pas de joueur.
+    """
+    out, paths = built
+    calques = {
+        "in one gesture": "in one click",
+        "is offered": "is available",
+        "native decklist": "decklist",
+        "Import to OPTCGSim": "Import into OPTCGSim",
+    }
+    for p in [q for q in paths if q.suffix == ".html"]:
+        page = p.read_text(encoding="utf-8")
+        for mauvais, bon in calques.items():
+            assert mauvais.lower() not in page.lower(), \
+                f"« {mauvais} » dans {p.name} : préférer « {bon} »"
+
+
 def test_theme_sombre_par_defaut(built):
     """Registre « outil de joueur » : le fond est sombre SANS attendre une préférence.
 

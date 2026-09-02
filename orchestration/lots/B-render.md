@@ -290,6 +290,21 @@ Attention aux **accords** : le filtre de pluriel existant est français (`fr_plu
 anglais la règle est différente et bien plus simple ; ne laisse pas de « 1 tournaments » ni
 de « card(s) ».
 
+### Écrire en anglais, pas traduire mot à mot
+
+Un test verrouille des tournures relevées sur un rendu réel — ce sont des calques du
+français, pas des hypothèses :
+
+| Ne pas écrire | Écrire |
+|---|---|
+| in one gesture (« en un geste ») | **in one click** |
+| is offered (« est offert ») | **is available** |
+| native decklist | **decklist** |
+| Import to OPTCGSim | **Import into OPTCGSim** |
+
+Plus généralement : relis chaque phrase en te demandant si un joueur anglophone l'écrirait
+ainsi. Les tests peuvent passer avec un anglais mot-à-mot, ils ne le rattraperont pas.
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).
