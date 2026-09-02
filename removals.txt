@@ -1,0 +1,16 @@
+# Demandes de retrait — RGPD, droit d'effacement / opposition.
+#
+# Une ligne = un nom de joueur, tel qu'il apparaît dans le corpus. Comparaison
+# insensible à la casse et aux espaces de bord. Les lignes vides et celles
+# commençant par « # » sont ignorées.
+#
+# Tout deck dont le joueur figure ici est ÉCARTÉ à la construction : il ne sort ni
+# sur la page de son tournoi, ni dans les vues agrégées, ni dans aucun deckpack.json.
+#
+# Pourquoi ce fichier existe côté publication et pas seulement dans les données :
+# le scraping tourne tous les jours et réintroduirait le nom au prochain passage.
+# Un retrait que la prochaine collecte annule n'est pas un retrait. C'est ici, au
+# point qui décide de ce qui est PUBLIÉ, que la demande doit être honorée.
+#
+# L'effacement des données brutes du dépôt optcgsim-deckpacks-data (et de son
+# historique git) est une opération distincte, à faire à la main sur demande.

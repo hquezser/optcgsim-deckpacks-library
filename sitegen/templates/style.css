@@ -202,3 +202,14 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .page-help { color: var(--muted); font-size: 0.85rem; margin: 0.25rem 0 0; }
 .import-relegue { margin-top: 2rem; opacity: 0.85; border-width: 1px; }
 .import-relegue .import-title { font-size: 0.95rem; }
+
+/* Page légale : du texte long, donc une mesure de ligne lisible et des sections
+   nettement séparées. Le pied de page gagne une ligne fine pour les mentions
+   permanentes (non-affiliation, sources) sans écraser le reste. */
+.legal { max-width: 42rem; margin-bottom: 2.2rem; }
+.legal h2 { margin-top: 1.8rem; }
+.legal h3 { margin-top: 1.2rem; font-size: 1rem; }
+.legal p, .legal li { line-height: 1.65; }
+.legal ul { padding-left: 1.1rem; }
+.legal li { margin-bottom: 0.5rem; }
+.footer-fine { font-size: 0.82rem; opacity: 0.75; }

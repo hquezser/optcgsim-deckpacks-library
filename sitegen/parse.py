@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import date
+from dataclasses import replace
 from pathlib import Path
 
 from . import formats
@@ -247,6 +248,25 @@ def _load_tournament(pack_dir: Path) -> tuple[Tournament, list[BuildWarning]]:
     return tournament, warnings
 
 
+# Fichier de demandes de retrait, à la racine du dépôt. Volontairement pas dans le dépôt de
+# données : c'est ce module qui décide de ce qui est publié, et le scraping quotidien
+# réécrirait les packs. Un retrait annulé par la collecte suivante n'est pas un retrait.
+REMOVALS_FILE = Path(__file__).resolve().parent.parent / "removals.txt"
+
+
+def load_removals(path: Path | None = None) -> frozenset[str]:
+    """Noms de joueurs à écarter, normalisés (casefold + strip). Fichier absent -> vide."""
+    f = Path(path) if path is not None else REMOVALS_FILE
+    if not f.is_file():
+        return frozenset()
+    noms = set()
+    for ligne in f.read_text(encoding="utf-8").splitlines():
+        ligne = ligne.strip()
+        if ligne and not ligne.startswith("#"):
+            noms.add(ligne.casefold())
+    return frozenset(noms)
+
+
 def load_site(packs_dir: Path) -> Site:
     """Lit `packs_dir/*/deckpack.json` -> Site.
 
@@ -261,12 +281,30 @@ def load_site(packs_dir: Path) -> Site:
         key=lambda p: p.name,
     )
 
+    retires = load_removals()
+
     tournaments: list[Tournament] = []
     warnings: list[BuildWarning] = []
+    n_retires = 0
     for pack_dir in pack_dirs:
         tournament, w = _load_tournament(pack_dir)
+        if retires:
+            gardes = tuple(d for d in tournament.decks
+                           if d.player.strip().casefold() not in retires)
+            n_retires += len(tournament.decks) - len(gardes)
+            if len(gardes) != len(tournament.decks):
+                tournament = replace(tournament, decks=gardes)
         tournaments.append(tournament)
         warnings.extend(w)
+
+    # Tracé dans le rapport de build : un retrait silencieux ne se distingue pas d'un
+    # fichier mal lu, et il faut pouvoir constater qu'une demande a bien été honorée.
+    if retires:
+        warnings.append(BuildWarning(
+            scope="corpus",
+            message=(f"retraits RGPD honorés : {len(retires)} joueur(s) listé(s) dans "
+                     f"removals.txt, {n_retires} deck(s) écarté(s) de la publication"),
+        ))
 
     # Détection d'un changement de format en cours, pour tout le corpus.
     #

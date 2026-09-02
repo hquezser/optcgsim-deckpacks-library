@@ -40,6 +40,7 @@ _sur_fixtures = False
 def expected_paths(site) -> set[str]:
     """L'ensemble EXACT attendu dans dist/, dérivé du corpus (cf. spec § carte des URLs)."""
     out = {"index.html", "style.css", "favicon.svg",
+           "legal/index.html",
            "meta/index.html", "meta/deckpack.json"}
     for t in site.tournaments:
         out.add(f"tournaments/{t.slug}/index.html")

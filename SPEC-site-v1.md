@@ -77,6 +77,59 @@ Employer les termes du TCG anglophone, pas des traductions littérales :
 `flex` est le terme réel : ce sont les emplacements qu'un joueur choisit librement, une fois
 le core posé. C'est exactement ce que la vue par écart montre.
 
+## Obligations légales (le site est en ligne)
+
+Le site est publié : les obligations s'appliquent, même sans monétisation et même avec zéro
+collecte. Elles sont **du contrat**, pas de la bonne volonté — une page de mentions légales
+se perd exactement comme n'importe quel gabarit, et personne ne s'en aperçoit pendant un an.
+D'où des tests dédiés dans `tests/test_contract_render.py`.
+
+### `/legal/` — page obligatoire, liée depuis CHAQUE page
+
+Une mention légale qu'on n'atteint qu'en devinant l'URL n'informe personne : le lien est
+dans le pied de page commun, donc partout, et un test le vérifie **page par page** (une
+profondeur `rel` mal câblée casserait le lien ailleurs que sur l'accueil).
+
+Elle doit porter, faute de quoi le portillon échoue :
+
+| Volet | Contenu exigé |
+|---|---|
+| Éditeur | Pseudonyme `hquezser`, éditeur non professionnel |
+| Hébergeur | **GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107** |
+| Contact | Les issues du dépôt — un moyen de contact effectif |
+| Droit applicable | Droit français |
+| Vie privée | Zéro cookie, zéro script, zéro sous-ressource, zéro mesure d'audience ; et la mention que l'hébergeur journalise les connexions, ce qui n'est pas le fait de l'éditeur |
+| Données personnelles | Finalité, base légale (intérêt légitime), minimisation, conservation, **procédure de retrait** |
+| Propriété intellectuelle | Aucun contenu de jeu reproduit ; non-affiliation à Bandai ; sources créditées et liées |
+| Garantie | Contenu fourni tel quel, sans garantie |
+
+**Pseudonymat de l'éditeur** : la LCEN (art. 6 III-2) l'autorise pour un éditeur non
+professionnel dès lors que l'hébergeur détient son identité. C'est le cas. L'identité de
+l'**hébergeur**, elle, n'est jamais facultative et doit figurer en toutes lettres.
+
+### Le vrai risque, ce sont les noms de joueurs
+
+755 noms de joueurs distincts sont publiés (dont ~153 ressemblent à des noms civils). C'est
+la partie sensible du site — pas les identifiants de cartes, qui ne sont ni protégeables ni
+personnels.
+
+Position retenue : **conserver, avec un droit de retrait effectif**. Base légale l'intérêt
+légitime — résultats déjà publiés par les organisateurs, finalité limitée à l'import dans le
+simulateur, aucune donnée de contact, aucun profil transversal.
+
+### Un retrait doit survivre au scraping
+
+`removals.txt`, à la racine du dépôt **du site** : un nom par ligne, comparaison insensible
+à la casse. Tout deck du joueur est écarté à la construction — pages, vues agrégées et
+`deckpack.json` compris — et le retrait est tracé dans le rapport de build.
+
+Le placement n'est pas un détail. Honorer la demande dans le dépôt de données seul la
+laisserait annuler par la collecte du lendemain : **un retrait que la prochaine exécution
+défait n'est pas un retrait**, et la page légale deviendrait une promesse fausse. C'est donc
+au point qui décide de ce qui est *publié* que la demande est honorée. L'effacement des
+données brutes de `optcgsim-deckpacks-data` (et de son historique git) reste une opération
+manuelle distincte, à faire sur demande.
+
 ## Portée v1
 
 Générateur statique. **Zéro** JS, auth, base de données, cookie, analytics, publicité,

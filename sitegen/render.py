@@ -27,6 +27,19 @@ from markupsafe import Markup, escape
 from .archetype import CORE_THRESHOLD, MIN_LISTS_FOR_DIFF, core_cards, deck_delta
 from .model import Deck, Site, Tournament
 
+# Identité de publication. Éditeur non professionnel : la LCEN (art. 6 III-2) permet de ne
+# pas exposer son état civil au public dès lors que l'HÉBERGEUR le détient — ce que GitHub
+# fait. On publie donc le pseudonyme, un moyen de contact, et l'identité complète de
+# l'hébergeur, qui, elle, est obligatoire en toutes lettres.
+PUBLISHER = "hquezser"
+CONTACT_URL = "https://github.com/hquezser/optcgsim-deckpacks-library/issues"
+
+# Date de dernière modification du TEXTE légal, à changer à la main avec lui. Surtout pas
+# `site.reference_date` : elle bouge à chaque scraping, et afficher « mis à jour le … » à
+# une date qui avance toute seule laisserait croire que les mentions ont changé alors que
+# rien n'a bougé. Une date de mise à jour qui ment est pire que pas de date du tout.
+LEGAL_UPDATED = "3 September 2026"
+
 __all__ = ["write_pages", "meta_pairs"]
 
 # Fenêtre et plafond du pack méta — miroir de la spec (cf. SPEC § « Définition du pack
@@ -571,6 +584,19 @@ def write_pages(site: Site, out: Path, base_url: str,
         written.append(_write(out, f"leaders/{aslug}/index.html", page))
 
     # --- meta (profondeur 1) ------------------------------------------------
+    # --- mentions légales et vie privée (profondeur 1) ---------------------
+    # Page obligatoire dès lors que le site est en ligne, et liée depuis CHAQUE page :
+    # une mention légale qu'on ne peut atteindre que par une URL devinée n'informe personne.
+    legal_tpl = env.get_template("legal.html")
+    written.append(_write(out, "legal/index.html", legal_tpl.render(
+        site=site,
+        publisher=PUBLISHER,
+        contact_url=CONTACT_URL,
+        legal_updated=LEGAL_UPDATED,
+        rel="../",
+        **ctx_common,
+    )))
+
     meta_tpl = env.get_template("meta.html")
     meta = meta_pairs(site)
     # Groupage par archétype, tri par nombre de listes décroissant puis libellé.

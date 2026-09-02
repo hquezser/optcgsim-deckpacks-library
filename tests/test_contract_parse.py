@@ -291,3 +291,53 @@ def test_pas_d_alerte_permanente_sur_les_sets_anciens(tmp_path):
 
     assert site.tournaments[0].format == "OP16.5", "ST31 doit toujours classer en OP16.5"
     assert not [w for w in site.warnings if w.scope == "corpus"]
+
+
+def test_un_retrait_ecarte_le_deck_de_toute_la_publication(tmp_path, monkeypatch):
+    """La demande de retrait doit être honorée au point qui décide de ce qui est PUBLIÉ.
+
+    Le scraping tourne tous les jours et réécrit les packs : honorer le retrait dans les
+    données seules le ferait annuler à la collecte suivante. Un retrait que la prochaine
+    exécution défait n'est pas un retrait — c'est ce qui transformerait la page légale en
+    promesse fausse.
+    """
+    _ecrire_pack(tmp_path, "2026-07-04-regional-x", "OP16 4th July 2026 - Regional X",
+                 ["1xOP15-058\n4xOP15-061", "1xOP15-058\n4xOP16-042"])
+    liste = tmp_path / "removals.txt"
+    liste.write_text("# commentaire ignoré\n\n  J0  \n", encoding="utf-8")
+    monkeypatch.setattr(parse, "REMOVALS_FILE", liste)
+
+    site = parse.load_site(tmp_path)
+    joueurs = [d.player for t in site.tournaments for d in t.decks]
+
+    assert "J0" not in joueurs, "le deck retiré est toujours publié"
+    assert "J1" in joueurs, "le retrait a emporté un deck qui n'était pas demandé"
+    assert any("retraits RGPD" in w.message for w in site.warnings), \
+        "un retrait doit être tracé dans le rapport de build"
+
+
+def test_le_retrait_est_insensible_a_la_casse_et_aux_espaces(tmp_path, monkeypatch):
+    """Une demande arrive écrite à la main : « j0 », « J0 » ou « J0 » entouré d'espaces
+    doivent tous fonctionner. Un droit qui échoue sur une majuscule n'est pas exerçable.
+    """
+    _ecrire_pack(tmp_path, "2026-07-04-regional-x", "OP16 4th July 2026 - Regional X",
+                 ["1xOP15-058\n4xOP15-061"])
+    liste = tmp_path / "removals.txt"
+    liste.write_text("  j0\n", encoding="utf-8")
+    monkeypatch.setattr(parse, "REMOVALS_FILE", liste)
+
+    site = parse.load_site(tmp_path)
+    assert not [d for t in site.tournaments for d in t.decks]
+
+
+def test_sans_fichier_de_retrait_rien_ne_change(tmp_path, monkeypatch):
+    """Le chemin par défaut ne doit rien coûter : fichier absent -> corpus intact, et
+    surtout aucun avertissement (un avertissement permanent n'avertit de rien).
+    """
+    _ecrire_pack(tmp_path, "2026-07-04-regional-x", "OP16 4th July 2026 - Regional X",
+                 ["1xOP15-058\n4xOP15-061"])
+    monkeypatch.setattr(parse, "REMOVALS_FILE", tmp_path / "absent.txt")
+
+    site = parse.load_site(tmp_path)
+    assert len(site.tournaments[0].decks) == 1
+    assert not [w for w in site.warnings if "retrait" in w.message]

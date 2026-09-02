@@ -33,6 +33,7 @@ def test_emet_exactement_les_pages_du_contrat(built):
         "index.html",
         "style.css",
         "favicon.svg",
+        "legal/index.html",
         "meta/index.html",
         "formats/op15/index.html",
         "formats/op16/index.html",
@@ -915,3 +916,100 @@ def test_pas_de_mention_de_circuit_quand_le_papier_donne_l_heure(built):
     bloc = re.search(r"<h3>Current format</h3>(.*?)</section>", _html(out, "index.html"), re.S)
     assert bloc
     assert "no paper tournament" not in re.sub(r"<[^>]+>", " ", bloc.group(1)).lower()
+
+
+# ── Obligations légales du site publié ──────────────────────────────────────────────
+# Ces tests ne jugent pas la qualité de la rédaction : ils vérifient qu'aucune des
+# obligations ne peut DISPARAÎTRE sans que le portillon s'en aperçoive. Une page légale se
+# perd exactement comme ça — un gabarit réécrit, personne ne s'en rend compte pendant un an.
+
+def test_la_page_legale_porte_les_mentions_obligatoires(built):
+    """Éditeur, hébergeur identifié en toutes lettres, contact, droit applicable.
+
+    L'identité de l'hébergeur est la partie NON facultative : un éditeur non professionnel
+    peut rester pseudonyme (LCEN art. 6 III-2), l'hébergeur jamais.
+    """
+    out, _ = built
+    page = _html(out, "legal/index.html")
+    for attendu in ("GitHub, Inc.", "88 Colin P. Kelly", "San Francisco",
+                    "hquezser", "French law", "issues"):
+        assert attendu in page, f"mention obligatoire absente : {attendu}"
+
+
+def test_la_page_legale_traite_les_donnees_personnelles(built):
+    """Noms de joueurs : finalité, base légale, et surtout procédure de retrait.
+
+    755 noms de joueurs sont publiés. C'est la partie du site qui porte un vrai risque, pas
+    les identifiants de cartes — et la seule réponse qui tienne est un droit de retrait
+    effectif et facile à trouver.
+    """
+    out, _ = built
+    page = _html(out, "legal/index.html")
+    for attendu in ("Legitimate interest", "GDPR", "CNIL", "removed"):
+        assert attendu in page, f"volet données personnelles incomplet : {attendu}"
+    assert 'id="removal"' in page, "pas d'ancre stable vers la procédure de retrait"
+    assert "do not have to justify" in page, \
+        "le retrait doit être inconditionnel, sinon il n'est pas un droit"
+
+
+def test_la_page_legale_decline_toute_affiliation(built):
+    out, _ = built
+    page = _html(out, "legal/index.html")
+    assert "Bandai" in page
+    assert "not affiliated" in page.lower()
+    for source in ("limitlesstcg.com", "chinoizecupstats.com"):
+        assert source in page, f"source non créditée sur la page légale : {source}"
+
+
+def test_toute_page_mene_a_la_page_legale(built):
+    """Une mention légale qu'on ne trouve qu'en devinant l'URL n'informe personne.
+
+    Le lien est dans le pied de page commun, donc sur toutes les pages : le vérifier page par
+    page est ce qui empêche une profondeur mal câblée (`rel`) de casser le lien ailleurs que
+    sur l'accueil.
+    """
+    out, paths = built
+    for p in paths:
+        if p.suffix != ".html":
+            continue
+        rel = p.relative_to(out)
+        text = p.read_text(encoding="utf-8")
+        prefixe = "../" * (len(rel.parts) - 1)
+        assert f'href="{prefixe}legal/"' in text, f"{rel} ne lie pas la page légale"
+        cible = (out / rel.parent / f"{prefixe}legal/index.html").resolve()
+        assert cible.is_file(), f"{rel} : le lien légal ne résout pas ({cible})"
+
+
+def test_le_pied_de_page_annonce_l_absence_de_pistage(built):
+    """L'affirmation la plus vérifiable du site, et celle qui rassure le plus vite."""
+    out, _ = built
+    pied = _html(out, "index.html")
+    assert "No cookies" in pied and "no tracking" in pied
+
+
+def test_la_page_legale_n_introduit_aucune_ressource_externe(built):
+    """Le comble serait qu'une page sur la vie privée fasse fuiter l'IP du lecteur.
+
+    Les liens sortants sont permis (le visiteur choisit de cliquer) mais doivent porter
+    `noreferrer` ; une sous-ressource, elle, est chargée toute seule et resterait interdite.
+    """
+    out, _ = built
+    page = _html(out, "legal/index.html")
+    for attr in ("src=", "srcset=", "@import", "<script"):
+        assert attr not in page, f"sous-ressource sur la page légale : {attr}"
+    for lien in re.findall(r'<a\s[^>]*href="https?://[^"]+"[^>]*>', page):
+        assert "noreferrer" in lien, f"lien externe sans noreferrer : {lien}"
+
+
+def test_la_date_de_mise_a_jour_legale_ne_suit_pas_le_corpus(built):
+    """Elle doit changer avec le TEXTE, jamais avec le dernier tournoi scrapé.
+
+    Câblée sur `site.reference_date`, elle avançait à chaque collecte : le lecteur aurait lu
+    « mis à jour le 1er septembre » sur des mentions inchangées depuis des semaines. Une date
+    de mise à jour qui ment vaut moins que pas de date.
+    """
+    out, _ = built
+    page = _html(out, "legal/index.html")
+    assert render.LEGAL_UPDATED in page
+    # Le fixture a un tournoi de juillet 2026 : la date légale ne doit pas s'y accrocher.
+    assert "Last updated" in page

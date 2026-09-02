@@ -1,0 +1,107 @@
+{% extends "_base.html" %}
+{% block title %}Legal notice & privacy — OPTCGSim deckpacks{% endblock %}
+{% block content %}
+
+<section class="page-head">
+  <h1>Legal notice &amp; privacy</h1>
+  <p class="page-meta">Last updated {{ legal_updated }}.</p>
+</section>
+
+<section class="legal" id="publisher">
+  <h2>Publisher and host</h2>
+  <p><strong>Publisher:</strong> {{ publisher }}, a private individual publishing this site
+    on a non-professional, non-commercial basis. Under French law (LCEN, art. 6 III-2), a
+    non-professional publisher may withhold their identity from the public provided the host
+    holds it. It does.</p>
+  <p><strong>Contact:</strong>
+    <a href="{{ contact_url }}" rel="noreferrer nofollow" target="_blank">GitHub issues on
+      the source repository</a>. This is the channel for every request below, including
+    removal requests.</p>
+  <p><strong>Host:</strong> GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco,
+    CA 94107, United States —
+    <a href="https://github.com" rel="noreferrer nofollow" target="_blank">github.com</a>.
+    The site is served by GitHub Pages.</p>
+  <p><strong>Applicable law:</strong> French law.</p>
+</section>
+
+<section class="legal" id="privacy">
+  <h2>What this site does not do</h2>
+  <p>This site sets <strong>no cookies</strong>, runs <strong>no JavaScript</strong>, loads
+    <strong>no external resource</strong> (no fonts, no images, no scripts, no stylesheets
+    from third parties), and contains <strong>no analytics, no tracker, no advertising and
+    no affiliate link</strong>. There is no account, no form and no field to fill in. Nothing
+    you do here is measured, stored or transmitted anywhere.</p>
+  <p>This is enforced by the build, not merely promised: every page is checked before
+    publication for the absence of any third-party sub-resource.</p>
+  <p>Because the site is served by GitHub Pages, GitHub processes technical connection data
+    (including your IP address) in order to deliver the pages, under its own privacy
+    statement. That processing is GitHub's, not the publisher's, and happens for any site
+    hosted there.</p>
+</section>
+
+<section class="legal" id="personal-data">
+  <h2>Personal data in the content</h2>
+  <p>The site publishes <strong>player names or handles, tournament names, dates and
+    placements</strong>, alongside decklists expressed as card identifiers and quantities.
+    Player names are personal data.</p>
+  <ul>
+    <li><strong>Source.</strong> These results were already published by the tournament
+      organisers listed under <a href="#sources">Sources</a>. Nothing here is collected from
+      you, and nothing is obtained from a private or restricted space.</li>
+    <li><strong>Purpose.</strong> To let players import competitive decklists into the
+      OPTCGSim simulator, and to compare lists within an archetype. Nothing else.</li>
+    <li><strong>Legal basis.</strong> Legitimate interest (GDPR art. 6(1)(f)): documenting
+      published competitive results, with data already public, in a form limited to what
+      that purpose needs.</li>
+    <li><strong>Minimisation.</strong> No email address, no postal address, no photograph,
+      no ranking history, no cross-tournament profile beyond what a decklist page shows.</li>
+    <li><strong>Retention.</strong> For as long as the corpus keeps the tournament. There is
+      no separate database of people.</li>
+  </ul>
+  <h3 id="removal">Removing your name</h3>
+  <p>If you appear here and would rather not, <strong>say so and it will be removed</strong>
+    — you do not have to justify the request. Open an issue on the
+    <a href="{{ contact_url }}" rel="noreferrer nofollow" target="_blank">repository</a>
+    naming the tournament and placement. You need not disclose anything further in public;
+    naming the entry is enough to identify it.</p>
+  <p>Removal is applied to the published corpus and takes effect on the next build, normally
+    within twenty-four hours. You also have the rights of access, rectification, objection
+    and restriction under the GDPR, and the right to lodge a complaint with a supervisory
+    authority (in France, the CNIL).</p>
+</section>
+
+<section class="legal" id="ip">
+  <h2>Intellectual property</h2>
+  <p><strong>No game content is reproduced here.</strong> The site displays card
+    <em>identifiers</em> (such as <code>OP15-061</code>) and quantities. It shows no card
+    artwork, no card name, no card text, no rules text and no scan. This is a deliberate
+    design constraint, checked at build time, not an oversight.</p>
+  <p>One Piece Card Game is a trademark of Bandai. This site is an independent,
+    non-commercial fan project. It is <strong>not affiliated with, endorsed, sponsored or
+    approved by</strong> Bandai, Shueisha, Toei Animation, Eiichiro Oda, or the operators of
+    the sources listed below. OPTCGSim is a third-party simulator, likewise unaffiliated.</p>
+  <h3 id="sources">Sources and attribution</h3>
+  <p>Tournament results are gathered from the organisers who publish them, and every
+    tournament page links back to its source. The publishers of those sources retain their
+    rights in their own databases.</p>
+  <ul>
+    <li><a href="https://onepiece.limitlesstcg.com" rel="noreferrer nofollow"
+        target="_blank">Limitless TCG</a> — paper circuit results.</li>
+    <li><a href="https://chinoizecupstats.com" rel="noreferrer nofollow"
+        target="_blank">ChinoizeCupStats</a> — online circuit results.</li>
+  </ul>
+  <p>If you operate one of these sources, or hold rights in any material published here, and
+    you want content removed or attributed differently, open an issue on the
+    <a href="{{ contact_url }}" rel="noreferrer nofollow" target="_blank">repository</a> and
+    it will be acted on promptly.</p>
+</section>
+
+<section class="legal" id="warranty">
+  <h2>No warranty</h2>
+  <p>The content is provided as is. Decklists are parsed automatically from third-party
+    sources and may be incomplete, out of date or wrong. Nothing here is official tournament
+    documentation, and no liability is accepted for any use made of it.</p>
+  <p>The site is free, carries no advertising, sells nothing and asks for nothing.</p>
+</section>
+
+{% endblock %}
