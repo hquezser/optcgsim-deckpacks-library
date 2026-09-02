@@ -39,6 +39,7 @@
     <h3>{{ section.total_lists }} {{ section.total_lists | fr_plur("liste") }} — par date décroissante</h3>
     <ol class="deck-list">
       {% for t, d, delta in section.display_rows %}
+      {% set conv_players = section.converging.get(d.signature) %}
       <li class="deck" id="{{ section.fslug }}-{{ d.slug }}">
         <details class="deck-details"{% if loop.first %} open{% endif %}>
           <summary class="deck-summary">
@@ -48,6 +49,9 @@
               — {{ d.total_cards }}/{{ deck_size }} cartes</span>
             {% if section.show_diff %}<span class="d-delta-tag">{{ delta | length }} {{ delta | length | fr_plur("carte") }} d'écart</span>{% endif %}
           </summary>
+          {% if conv_players %}
+          <p class="converg-notice">{{ conv_players | length }} {{ conv_players | length | fr_plur("joueur") }} jouent cette liste au caractère près.</p>
+          {% endif %}
           <p class="d-provenance">
             <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
             — <span class="t-date">{{ t.date if t.date else "date inconnue" }}</span>

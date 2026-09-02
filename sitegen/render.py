@@ -457,6 +457,12 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             total_lists = len(f_deck_rows)
             display_rows = f_deck_rows[:LEADER_LISTS_CAP]
             omitted = max(0, total_lists - LEADER_LISTS_CAP)
+            # Convergence : joueurs DIFFÉRENTS jouant la même liste au caractère près.
+            # On l'annonce plutôt que d'aligner des entrées identiques — c'est le signal
+            # le plus fort qu'une liste est résolue (cf. SPEC § « Redondance et
+            # convergence »). Les joueurs restent nommés : on signale le partage, on ne
+            # fusionne pas les voix.
+            converging = site.converging_players(aslug, fslug)
             sections.append({
                 "fslug": fslug,
                 "label": site.format_label(fslug),
@@ -468,6 +474,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
                 "core_items": f_core_items,
                 "show_diff": f_show_diff,
                 "deck_rows": f_deck_rows,
+                "converging": converging,
                 "pack_url": f"/leaders/{aslug}/{fslug}.json",
             })
         page = leader_tpl.render(
