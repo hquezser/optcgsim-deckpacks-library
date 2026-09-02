@@ -106,7 +106,8 @@ Si `placement is None` : `f"xx-{slug(raw_name)}"`.
 /leaders/<aslug>/<fslug>.json                  pack : ses listes dans ce format seul
 /meta/index.html                               instantané du méta courant
 /meta/deckpack.json                            pack : le méta courant
-/style.css                                     feuille unique, ~200 lignes max
+/style.css                                     feuille unique
+/favicon.svg                                   icône de site (seul asset, cf. « Icône de site »)
 ```
 
 `<fslug>` est le format slugifié (`OP14.5` → `op14-5`). Seuls les formats connus produisent
@@ -252,6 +253,36 @@ circuit papier (« Green/Blue Luffy » décrit le deck, « Monkey D. Luffy » le
 
 Pas de nom de carte affiché — **uniquement des IDs**. C'est un invariant, pas un manque
 (cf. `AGENTS.md`).
+
+## Registre visuel
+
+**Sombre par défaut, néon discret.** Le public est celui d'OPTCGSim, et le produit est une
+commande : le site doit ressembler à un outil de joueur, pas à une publication.
+
+- **Fond sombre en défaut**, pas seulement sous `prefers-color-scheme: dark`. Un thème clair
+  reste servi à qui le demande explicitement.
+- **Accents saturés mais parcimonieux** : la couleur signale, elle ne décore pas. Réservée
+  aux liens, au placement de tête et à la mise en valeur de la commande.
+- **Le bloc d'import est traité comme un terminal** : surface sombre distincte, marqueur de
+  prompt, police à espacement fixe. C'est une commande shell ; la faire ressembler à autre
+  chose brouille le seul message du site.
+- **Chiffres tabulaires** (`font-variant-numeric: tabular-nums`) partout. Le site est rempli
+  de `4x`, `50/50`, `234 listes` : sans cela, rien ne s'aligne et l'ensemble paraît bâclé.
+- **La puce de carte distingue la quantité de l'identifiant.** Un 4-of doit se lire comme la
+  colonne vertébrale du deck, et une quantité inhabituelle (les cartes sans limite se jouent
+  à 8 ou 9) doit sauter aux yeux — c'est de l'information, pas du décor.
+- **Le placement de tête est distingué** discrètement (poids, teinte), le reste reste calme :
+  une page de 16 decks doit se parcourir des yeux.
+
+Pas de codage couleur par archétype : seuls 21 des 62 libellés portent une couleur (les
+autres viennent de ChinoizeCupStats, qui nomme par personnage), et un accent qui ne
+fonctionne qu'au tiers est pire que pas d'accent.
+
+### Icône de site
+
+`favicon.svg`, écrit à la main, servi depuis le même domaine. **Seule exception à
+« aucun asset »**, et elle est délibérée : l'invariant vise les assets de CARTES sous
+copyright, pas une icône de projet. Aucun contenu tiers, aucune requête externe.
 
 ## Rendu HTML
 

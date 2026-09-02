@@ -178,6 +178,37 @@ racine, est le seul qui survive aux trois cas.
 `--base-url` ne doit plus servir qu'à **une** chose : l'URL affichée dans la commande
 d'import, qui doit rester absolue pour être collable dans un terminal.
 
+## Habillage : registre « outil de joueur » (tests rouges)
+
+Le site est propre mais plat — il ressemble à un bon document technique, pas à un produit.
+Le public est celui d'OPTCGSim et le produit est **une commande** : le registre visé est
+celui d'un outil de joueur, proche d'un terminal, pas celui d'une publication.
+
+Lis d'abord la section « Registre visuel » de `SPEC-site-v1.md`, qui fait foi.
+
+1. **Fond sombre PAR DÉFAUT**, pas seulement sous `prefers-color-scheme: dark`. Un thème
+   clair reste servi à qui le demande explicitement (`prefers-color-scheme: light`).
+2. **Chiffres tabulaires** (`font-variant-numeric: tabular-nums`) partout. Le site est
+   rempli de `4x`, `50/50`, `234 listes` : sans largeur fixe, rien ne s'aligne.
+3. **Le bloc d'import traité comme un terminal** : surface sombre distincte, police à
+   espacement fixe, et un **marqueur de prompt injecté en CSS** (`::before { content: "$" }`)
+   — jamais dans le HTML, sinon il serait copié avec la commande et la casserait.
+4. **La puce de carte distingue la quantité de l'identifiant** : la quantité dans son propre
+   élément, avec une classe (`qty`). Un 4-of doit se lire comme la colonne vertébrale du
+   deck, et un `9x` (carte sans limite) doit sauter aux yeux — c'est de l'information.
+5. **Le placement de tête est distingué** discrètement, via une classe stylée (`rank`,
+   `place` ou `podium`) ; le reste reste calme.
+6. **`favicon.svg`, écrit à la main**, référencé en relatif sur toutes les pages. Aucune
+   référence externe dedans. C'est la seule exception à « aucun asset », et elle est
+   assumée : l'invariant vise les assets de CARTES, pas une icône de projet.
+7. **Corrige la duplication de libellé de source** : « Source : Limitless · Limitless ». Deux
+   URL d'un même domaine donnent deux fois le même libellé, ce qui ressemble à un bug.
+   Distingue-les (par exemple par leur rôle : le listing et le tournoi) ou n'en garde qu'une.
+
+Accents saturés mais **parcimonieux** : la couleur signale, elle ne décore pas. Pas de
+codage couleur par archétype — seuls 21 des 62 libellés portent une couleur, et un accent
+qui ne marche qu'au tiers est pire que pas d'accent.
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).

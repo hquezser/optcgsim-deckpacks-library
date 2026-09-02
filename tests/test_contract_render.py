@@ -31,6 +31,7 @@ def test_emet_exactement_les_pages_du_contrat(built):
     assert rel == {
         "index.html",
         "style.css",
+        "favicon.svg",
         "meta/index.html",
         "formats/op15/index.html",
         "formats/op16/index.html",
@@ -205,6 +206,101 @@ def test_site_utilisable_en_file_url(built):
     href = re.search(r"""<link[^>]+href\s*=\s*["']([^"']+)""", page).group(1)
     cible = (out / "leaders" / "op15-058" / href).resolve()
     assert cible.is_file(), f"feuille de style introuvable depuis la page : {href}"
+
+
+def test_theme_sombre_par_defaut(built):
+    """Registre « outil de joueur » : le fond est sombre SANS attendre une préférence.
+
+    Un thème clair reste servi à qui le demande explicitement, donc on exige aussi le bloc
+    `prefers-color-scheme: light`.
+    """
+    out, _ = built
+    css = _html(out, "style.css").replace(" ", "").replace("\n", "")
+    assert "prefers-color-scheme:light" in css, \
+        "un thème clair doit rester disponible pour qui le demande"
+    # Le fond par défaut doit être sombre : on le vérifie par la luminance de la couleur
+    # déclarée sur body/:root hors media query.
+    hors_media = re.split(r"@media", _html(out, "style.css"))[0]
+    fonds = re.findall(r"background(?:-color)?\s*:\s*#([0-9a-fA-F]{3,6})", hors_media)
+    assert fonds, "aucune couleur de fond déclarée hors media query"
+    def lum(h):
+        h = h if len(h) == 6 else "".join(c * 2 for c in h)
+        r, v, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return (0.299 * r + 0.587 * v + 0.114 * b) / 255
+    assert lum(fonds[0]) < 0.35, f"fond par défaut trop clair (#{fonds[0]})"
+
+
+def test_chiffres_tabulaires(built):
+    """Le site est rempli de « 4x », « 50/50 », « 234 listes » : sans chiffres de largeur
+    fixe, rien ne s'aligne en colonne et l'ensemble paraît bâclé."""
+    out, _ = built
+    css = _html(out, "style.css").replace(" ", "")
+    assert "tabular-nums" in css
+
+
+def test_bloc_import_traite_comme_un_terminal(built):
+    """C'est une commande shell : la faire ressembler à autre chose brouille le seul
+    message du site. Surface distincte et marqueur de prompt."""
+    out, _ = built
+    page = _html(out, "meta/index.html")
+    css = _html(out, "style.css")
+    assert re.search(r"""class=["'][^"']*import[^"']*["']""", page)
+    # Un marqueur de prompt, injecté en CSS pour rester hors du texte copié.
+    assert "content:" in css.replace(" ", "") and "$" in css, \
+        "le bloc doit porter un marqueur de prompt (en CSS, pour ne pas polluer la copie)"
+
+
+def test_favicon_maison_et_meme_origine(built):
+    """Seule exception à « aucun asset », et elle est délibérée : l'invariant vise les
+    assets de CARTES sous copyright, pas une icône de projet."""
+    out, paths = built
+    svg = out / "favicon.svg"
+    assert svg.is_file(), "favicon.svg manquant"
+    contenu = svg.read_text(encoding="utf-8")
+    assert contenu.lstrip().startswith("<svg"), "le favicon doit être un SVG écrit à la main"
+    assert "http" not in contenu, "aucune référence externe dans le favicon"
+    for rel in ("index.html", "meta/index.html", "leaders/op15-058/index.html"):
+        page = _html(out, rel)
+        m = re.search(r"""<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*>""", page)
+        assert m, f"favicon non référencé dans {rel}"
+        assert "http" not in m.group(0), "le favicon doit être servi en relatif"
+
+
+def test_placement_de_tete_distingue(built):
+    """Une page de 16 decks doit se parcourir des yeux : le podium se distingue, le
+    reste reste calme."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    css = _html(out, "style.css")
+    assert re.search(r"""class=["'][^"']*(rank|place|podium)[^"']*["']""", page), \
+        "le placement doit porter une classe pour être distingué"
+    assert re.search(r"\.(rank|place|podium)[\w-]*", css), \
+        "et cette classe doit être stylée"
+
+
+def test_puce_de_carte_distingue_quantite_et_id(built):
+    """Un 4-of doit se lire comme la colonne vertébrale du deck, et une quantité
+    inhabituelle (cartes sans limite, jouées à 8 ou 9) doit sauter aux yeux."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    assert re.search(r"""<[^>]*class=["'][^"']*(qty|quantite|qte)[^"']*["'][^>]*>\s*\d+""",
+                     page), "la quantité doit être un élément distinct de l'identifiant"
+
+
+def test_attribution_sans_libelle_duplique(built):
+    """« Source : Limitless · Limitless » — deux URL de la même source donnaient deux fois
+    le même libellé, ce qui ressemble à un bug d'affichage."""
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    # Fenêtre volontairement large : à 220 caractères elle coupait avant le second `</a>`,
+    # le test ne voyait qu'un libellé et passait alors que la duplication était bien là.
+    # Et pas de `if` — un test qui ne trouve pas son sujet doit échouer, pas se taire.
+    bloc = re.search(r"Source\s*:(.*?)</p>", page, re.DOTALL)
+    assert bloc, "aucun bloc « Source : » sur la page de tournoi"
+    libelles = re.findall(r">([^<>]{2,40})</a>", bloc.group(1))
+    assert len(libelles) >= 2, f"la fixture a deux URL source, trouvé {libelles}"
+    assert len(libelles) == len(set(libelles)), \
+        f"libellé de source dupliqué : {libelles}"
 
 
 def test_attribution_porte_un_libelle_lisible(built):
