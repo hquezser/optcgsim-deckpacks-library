@@ -198,6 +198,27 @@ directement doit savoir s'il regarde le méta courant ou un méta à venir.
   compacte (`rel="noreferrer nofollow"`, `target="_blank"`) — créditer la source reste
   obligatoire, l'étaler ne l'est pas.
 
+### Redondance et convergence
+
+Les coupes en ligne sont **quotidiennes**, et un joueur assidu y rejoue sa liste jour après
+jour. Deux situations que la ressemblance des listes confond, et qu'il faut séparer :
+
+- **Redondance** — *même joueur, même liste.* Aucune information nouvelle. `Site.leaders()`
+  **déduplique** par (joueur, signature) en gardant l'occurrence la plus récente. Sans cela
+  un joueur pèserait autant de fois dans le cœur commun : mesuré sur le corpus, 221 entrées
+  redondantes, un joueur à 39 entrées, et **18 groupes agrégés sur 48 dont le cœur change**
+  une fois la déduplication faite. C'est une correction de justesse, pas d'encombrement.
+- **Convergence** — *joueurs différents, même liste.* C'est le signal le plus fort qu'une
+  liste est résolue, et chacun garde sa voix : jamais dédupliqué. 96 listes partagées sur le
+  corpus, couvrant 13 % des entrées, avec des cas jusqu'à neuf joueurs.
+
+La page `/leaders/` **annonce** la convergence (« N joueurs jouent cette liste ») plutôt que
+d'aligner des entrées identiques : plus informatif et plus court à la fois.
+`Site.converging_players(aslug, fslug)` la fournit.
+
+La **quasi**-similarité n'est jamais dédupliquée : à quelques cartes d'écart, deux listes
+diffèrent réellement, et la vue par écart existe précisément pour le montrer.
+
 ### Affichage des cartes
 
 Les cartes d'un deck sont affichées **triées par quantité décroissante, puis par identifiant**.

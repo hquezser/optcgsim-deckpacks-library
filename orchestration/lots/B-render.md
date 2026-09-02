@@ -209,6 +209,24 @@ Accents saturés mais **parcimonieux** : la couleur signale, elle ne décore pas
 codage couleur par archétype — seuls 21 des 62 libellés portent une couleur, et un accent
 qui ne marche qu'au tiers est pire que pas d'accent.
 
+## Annoncer la convergence (test rouge)
+
+Sur une page `/leaders/`, plusieurs joueurs jouent parfois la **même liste au caractère
+près**. C'est le signal le plus fort qu'une liste est résolue — jusqu'à neuf joueurs sur le
+corpus réel — et l'annoncer vaut mieux que d'aligner des entrées identiques : plus informatif
+et plus court.
+
+`Site.converging_players(aslug, fslug)` renvoie `signature -> (joueurs triés)` pour les seules
+listes partagées par au moins deux joueurs. Le modèle fait déjà tout le calcul.
+
+À faire : sur chaque liste concernée, annoncer le partage avec le **nombre de joueurs** et
+une classe contenant `converg` (pour le style et pour les tests). Les joueurs restent
+**nommés** — on signale le partage, on ne fusionne pas les voix.
+
+Ne pas confondre avec la déduplication, qui est déjà faite dans le modèle et qui porte sur le
+cas inverse (même joueur rejouant sa liste). Lis la section « Redondance et convergence » de
+`SPEC-site-v1.md`.
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).

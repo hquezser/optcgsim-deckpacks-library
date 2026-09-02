@@ -166,6 +166,68 @@ def test_leaders_filtre_par_format():
     assert site.leaders("op99") == {}
 
 
+def _liste(joueur, placement, cartes, leader="OP15-058"):
+    txt = f"1x{leader}\n" + "\n".join(f"{q}x{c}" for c, q in cartes)
+    return Deck(raw_name=f"Purple Enel — {joueur} ({placement})", archetype="Purple Enel",
+                player=joueur, placement=placement, leader_id=leader, cards=tuple(cartes),
+                text=txt)
+
+
+_CARTES_A = (("OP15-061", 4), ("OP15-067", 3))
+_CARTES_B = (("OP15-061", 4), ("OP12-071", 2))
+
+
+def test_signature_ignore_l_ordre_et_le_nom():
+    a = _liste("X", 1, (("OP15-061", 4), ("OP15-067", 3)))
+    b = _liste("Y", 9, (("OP15-067", 3), ("OP15-061", 4)))   # même contenu, autre ordre
+    assert a.signature == b.signature
+    assert _liste("X", 1, _CARTES_A).signature != _liste("X", 1, _CARTES_B).signature
+
+
+def test_dedup_meme_joueur_meme_liste_garde_la_plus_recente():
+    """Les coupes en ligne sont quotidiennes : un joueur assidu rejoue sa liste, et sans
+    déduplication il pèserait autant de fois dans le cœur commun."""
+    recent = _t("2026-07-26-r", date(2026, 7, 26), "OP16", (_liste("Assidu", 1, _CARTES_A),))
+    vieux = _t("2026-07-20-v", date(2026, 7, 20), "OP16", (_liste("Assidu", 5, _CARTES_A),))
+    pairs = Site(tournaments=(vieux, recent)).leaders()["op15-058"]
+    assert len(pairs) == 1, "une seule entrée pour un joueur rejouant sa liste"
+    assert pairs[0][0].slug == "2026-07-26-r", "l'occurrence la plus récente est gardée"
+
+
+def test_dedup_epargne_le_meme_joueur_avec_une_AUTRE_liste():
+    t = _t("2026-07-26-r", date(2026, 7, 26), "OP16",
+           (_liste("Assidu", 1, _CARTES_A), _liste("Assidu", 2, _CARTES_B)))
+    assert len(Site(tournaments=(t,)).leaders()["op15-058"]) == 2
+
+
+def test_dedup_epargne_deux_joueurs_avec_la_MEME_liste():
+    """Convergence, pas redondance : deux joueurs arrivant indépendamment aux mêmes cartes
+    est le signal le plus fort qu'une liste est résolue. Chacun garde sa voix."""
+    t = _t("2026-07-26-r", date(2026, 7, 26), "OP16",
+           (_liste("Alice", 1, _CARTES_A), _liste("Bob", 2, _CARTES_A)))
+    assert len(Site(tournaments=(t,)).leaders()["op15-058"]) == 2
+
+
+def test_dedup_insensible_a_la_casse_du_joueur():
+    a = _t("2026-07-26-a", date(2026, 7, 26), "OP16", (_liste("DZayas", 1, _CARTES_A),))
+    b = _t("2026-07-20-b", date(2026, 7, 20), "OP16", (_liste("dzayas", 3, _CARTES_A),))
+    assert len(Site(tournaments=(b, a)).leaders()["op15-058"]) == 1
+
+
+def test_converging_players_expose_la_convergence():
+    t = _t("2026-07-26-r", date(2026, 7, 26), "OP16",
+           (_liste("Alice", 1, _CARTES_A), _liste("Bob", 2, _CARTES_A),
+            _liste("Carol", 3, _CARTES_B)))
+    conv = Site(tournaments=(t,)).converging_players("op15-058")
+    assert len(conv) == 1, "seule la liste partagée est renvoyée"
+    assert list(conv.values())[0] == ("Alice", "Bob"), "joueurs triés, sortie déterministe"
+
+
+def test_converging_players_ignore_une_liste_unique():
+    t = _t("2026-07-26-r", date(2026, 7, 26), "OP16", (_liste("Seule", 1, _CARTES_A),))
+    assert Site(tournaments=(t,)).converging_players("op15-058") == {}
+
+
 def test_archetype_label_retrouve_le_libelle():
     t = Tournament("2026-07-04-r", "R", date(2026, 7, 4), "", "", (_deck(),))
     assert Site(tournaments=(t,)).archetype_label("op15-058") == "Purple Enel"

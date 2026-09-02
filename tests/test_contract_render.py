@@ -556,6 +556,25 @@ def test_nombre_d_ecart_annonce_une_seule_fois(tmp_path):
         f"{len(re.findall(r'écart', page))} mentions d'écart pour 5 listes"
 
 
+def test_page_leader_annonce_la_convergence(built):
+    """Plusieurs joueurs sur la même liste au caractère près : c'est le signal le plus fort
+    qu'une liste est résolue, et l'annoncer vaut mieux que d'aligner des entrées identiques.
+
+    Fixture : Krullzor et mirkosp95 jouent la même liste en OP16.5 (ordre des lignes
+    différent, signature identique).
+    """
+    out, _ = built
+    page = _html(out, "leaders/op15-058/index.html")
+    assert re.search(r"""class=["'][^"']*converg[^"']*["']""", page), \
+        "la convergence doit porter une classe pour être stylée et testable"
+    # Les deux joueurs restent nommés — on annonce le partage, on ne fusionne pas les voix.
+    assert "Krullzor" in page and "mirkosp95" in page
+    bloc = re.search(r"""<[^>]*class=["'][^"']*converg[^"']*["'][^>]*>(.{0,200})""",
+                     page, re.DOTALL)
+    assert bloc and re.search(r"\d+\s*joueur", bloc.group(1)), \
+        "le nombre de joueurs partageant la liste doit être annoncé"
+
+
 def test_page_leader_sous_le_seuil_reste_complete(built):
     """purple-enel n'a que 2 listes : pas de cœur, affichage complet conservé."""
     out, _ = built

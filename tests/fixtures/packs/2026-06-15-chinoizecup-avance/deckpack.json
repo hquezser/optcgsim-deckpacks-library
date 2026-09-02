@@ -12,7 +12,8 @@
     {
       "name": "Purple Enel — mirkosp95 (2)",
       "tags": ["meta", "online", "op", "2026"],
-      "text": "1xOP15-058\n4xOP15-061\n3xST31-004\n4xOP15-067"
+      "_note": "Liste IDENTIQUE à celle de Krullzor, mais joueur différent : c'est de la CONVERGENCE, pas de la redondance. La déduplication doit l'épargner, et le rendu doit l'annoncer. L'ordre des lignes diffère volontairement — la signature ignore l'ordre.",
+      "text": "1xOP15-058\n3xOP12-071\n4xOP15-061\n2xOP10-067\n4xST31-004"
     }
   ]
 }
