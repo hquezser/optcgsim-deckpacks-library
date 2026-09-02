@@ -24,12 +24,27 @@ Ce dépôt ne définit pas le format et ne scrape rien. Il **rend**.
   invariant est ce qui rend le projet publiable ; il n'est pas négociable pour du confort
   d'affichage.
 
-  **Question tranchée le 2026-08-03 — ne pas la rouvrir.** Afficher des images de cartes,
-  des noms, des statistiques de jeu ou un lien par carte vers une base externe a été
-  examiné et **écarté**. L'affichage en IDs seuls n'est pas une limite subie mais un choix
-  de produit : la promesse du site est l'import en un clic, pas la consultation. Le lecteur
-  voit les cartes dans le simulateur, après import — c'est là qu'elles sont lisibles, avec
-  leurs véritables illustrations, et légalement.
+  **Question tranchée le 2026-08-03, amendée le 2026-09-03.** Afficher des images de
+  cartes, des noms ou des statistiques de jeu a été examiné et **reste écarté** — cette
+  partie n'est pas à rouvrir. L'affichage en IDs seuls n'est pas une limite subie mais un
+  choix de produit : la promesse du site est l'import en un clic, pas la consultation. Le
+  lecteur voit les cartes dans le simulateur, après import — c'est là qu'elles sont
+  lisibles, avec leurs véritables illustrations, et légalement.
+
+  **Seul le lien par carte est rouvert** (2026-09-03), et sous conditions strictes :
+
+  - **Désactivé par défaut.** Sans `--card-link-base`, la sortie est identique à celle
+    d'avant l'amendement, octet pour octet. Le site publié reste en IDs nus tant que le
+    drapeau n'est pas passé explicitement — c'est ce qui rend l'amendement réversible.
+  - **Un `<a href>`, jamais une sous-ressource.** Un lien n'est suivi que si le visiteur
+    clique ; c'est la distinction que `check_dist.py` fait déjà, et c'est elle qui rend ce
+    lien acceptable là où une `<img>` ne l'est pas. `loading="lazy"` ne change pas cet
+    arbitrage : il déplace le moment de la requête, pas le fait qu'elle part sans clic —
+    et `data-src` est dans `_SUBRESOURCE_RE` précisément pour fermer ce contournement.
+  - **`rel="noreferrer nofollow"` obligatoire**, comme pour l'attribution de source.
+  - **Aucun nom de carte n'entre dans le HTML.** Le lien porte l'ID comme libellé ; c'est
+    la page cible qui nomme la carte, chez qui a le droit de le faire. L'invariant
+    zéro-copyright est donc intact, y compris drapeau activé.
 
   Précisions utiles si la question resurgit malgré tout :
   - Les images existent déjà sur la machine de tout lecteur potentiel

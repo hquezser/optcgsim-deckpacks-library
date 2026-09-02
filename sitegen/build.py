@@ -25,6 +25,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", default="dist", help="dossier de sortie (défaut : dist)")
     ap.add_argument("--base-url", default=DEFAULT_BASE_URL,
                     help="URL publique, utilisée dans les commandes d'import affichées")
+    ap.add_argument("--card-link-base", default="", metavar="GABARIT",
+                    help="gabarit d'URL contenant {id} : lie chaque identifiant de carte "
+                         "(ex. https://onepiece.limitlesstcg.com/cards/{id}). Absent = "
+                         "IDs nus, comportement par défaut")
     args = ap.parse_args(argv)
 
     # Imports locaux : le CLI doit pouvoir afficher --help même si un lot n'est pas encore
@@ -43,7 +47,14 @@ def main(argv: list[str] | None = None) -> int:
     # Lot C — les deckpack.json dérivés (tournois, leaders, méta, decks isolés).
     written = packs.write_packs(site, out)
     # Lot B — les pages HTML + la feuille de style.
-    written += render.write_pages(site, out, base_url=args.base_url.rstrip("/"))
+    # Le lien par carte est opt-in (cf. SPEC § « Lien par carte »). On ne transmet le
+    # paramètre que s'il est demandé : le chemin par défaut reste ainsi appelable sur un
+    # `render.write_pages` qui ne le connaît pas encore, pour qu'un lot en cours
+    # d'implémentation ne casse pas le build — ni le portillon transversal — de tout le
+    # monde. Une fois le lot F terminé, la branche vide et la branche pleine sont
+    # équivalentes ; garder la condition ne coûte rien et documente que le défaut est nu.
+    lien = {"card_link_base": args.card_link_base} if args.card_link_base else {}
+    written += render.write_pages(site, out, base_url=args.base_url.rstrip("/"), **lien)
 
     archetypes = site.leaders()
     print(f"{len(site.tournaments)} tournoi(s), "

@@ -1,7 +1,8 @@
 """Contrat du LOT B — sitegen/render.py + templates. FIGÉ : le worker B implémente.
 
 Interface attendue :
-    render.write_pages(site, out: Path, base_url: str) -> list[Path]
+    render.write_pages(site, out: Path, base_url: str,
+                       card_link_base: str = "") -> list[Path]
 """
 
 from __future__ import annotations
@@ -796,3 +797,71 @@ def test_write_pages_est_deterministe(site, tmp_path):
         if pa.is_file():
             assert pa.read_bytes() == (b / pa.relative_to(a)).read_bytes(), \
                 f"sortie non déterministe : {pa}"
+
+
+# --------------------------------------------------------------- LOT F : lien par carte
+# Amendement du 2026-09-03 (cf. AGENTS.md § invariants, SPEC § « Lien par carte »). Le
+# lien par carte est la SEULE ouverture consentie à l'invariant zéro-copyright, et elle
+# tient entièrement à trois propriétés : opt-in, `<a href>` et jamais une sous-ressource,
+# libellé = ID. Ces trois tests sont ce qui les rend non négociables.
+
+CARD_LINK = "https://onepiece.limitlesstcg.com/cards/{id}"
+
+
+def test_sans_drapeau_aucun_lien_par_carte(built):
+    """Opt-in : sans `--card-link-base`, la sortie ne contient aucun lien de carte.
+
+    C'est ce qui rend l'amendement réversible — et ce qui garantit que le site publié
+    reste en IDs nus tant que personne n'a explicitement demandé autre chose.
+    """
+    out, paths = built
+    for p in paths:
+        if p.suffix != ".html":
+            continue
+        text = p.read_text(encoding="utf-8")
+        assert "limitlesstcg.com/cards/" not in text, \
+            f"lien de carte alors que le drapeau est absent : {p.name}"
+
+
+def test_avec_drapeau_lid_est_lie_et_protege(site, tmp_path):
+    """Chaque ID devient un `<a>` vers le gabarit, avec `rel` complet et `target`.
+
+    `noreferrer` pour ne pas envoyer le référent du visiteur, `nofollow` pour ne pas
+    promettre de poids SEO — même contrat que l'attribution de source. Sans `rel`, le
+    lien tomberait sous le coup de `check_dist.check_no_outbound`.
+    """
+    paths = render.write_pages(site, tmp_path, base_url=BASE, card_link_base=CARD_LINK)
+    page = next(p for p in paths
+                if p.as_posix().endswith("2026-07-04-regional-bielefeld/index.html"))
+    text = page.read_text(encoding="utf-8")
+
+    balise = re.search(
+        r"""<a\s[^>]*href=["']https://onepiece\.limitlesstcg\.com/cards/OP15-061["'][^>]*>""",
+        text)
+    assert balise, "OP15-061 n'est pas lié alors que le drapeau est passé"
+    assert "noreferrer" in balise.group(0).lower()
+    assert "nofollow" in balise.group(0).lower()
+    assert "_blank" in balise.group(0).lower()
+
+    # Le libellé reste l'ID : aucun nom de carte n'entre dans le HTML (invariant intact).
+    assert re.search(r">\s*OP15-061\s*<", text), "le libellé du lien n'est plus l'ID"
+
+
+def test_le_lien_par_carte_ne_lie_jamais_la_quantite(site, tmp_path):
+    """La quantité n'appartient pas à la carte : `<span class="qty">4</span>` reste hors
+    du lien. La puce doit continuer de distinguer quantité et identifiant (SPEC §
+    « Registre visuel ») — un 4-of se lit comme la colonne vertébrale du deck.
+
+    Et surtout : le lien reste un `<a href>`. Aucune `<img>`, aucun `src`/`data-src` ne
+    doit apparaître, drapeau activé — c'est la frontière exacte de l'amendement.
+    """
+    paths = render.write_pages(site, tmp_path, base_url=BASE, card_link_base=CARD_LINK)
+    for p in paths:
+        if p.suffix not in {".html", ".css"}:
+            continue
+        text = p.read_text(encoding="utf-8")
+        assert not re.search(r"""<a\s[^>]*>\s*<span class="qty">""", text), \
+            f"la quantité est à l'intérieur du lien dans {p.name}"
+        for attr in ("src=", "srcset=", "data-src="):
+            assert attr not in text, \
+                f"sous-ressource ({attr}) introduite avec le lien par carte : {p.name}"

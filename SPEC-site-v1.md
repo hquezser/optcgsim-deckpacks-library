@@ -294,6 +294,34 @@ Ce tri est **d'affichage uniquement**. `Deck.text` et les `deckpack.json` produi
 conservent l'ordre source verbatim — c'est un contrat de données consommé par un autre
 programme.
 
+#### Lien par carte (optionnel, désactivé par défaut)
+
+`--card-link-base <gabarit>`, où `<gabarit>` contient `{id}` : chaque identifiant de carte
+affiché devient un lien vers `<gabarit>` avec `{id}` remplacé par l'ID (`OP15-061`).
+
+- **Drapeau absent = comportement d'avant l'amendement du 2026-09-03.** La puce reste un
+  `<code>` nu et la sortie est identique octet pour octet. C'est le défaut, CI incluse.
+- **Seul l'identifiant est lié, pas la quantité.** La quantité n'appartient pas à la carte,
+  et la puce doit continuer de distinguer les deux (cf. « Registre visuel »).
+- Chaque lien porte `rel="noreferrer nofollow"` et `target="_blank"`, comme l'attribution
+  de source.
+- Le gabarit doit être une URL absolue `http(s)://` contenant `{id}`. Il ne doit contenir
+  aucun des motifs interdits par `check_dist.py` — `cdn.` notamment, qui est cherché comme
+  simple sous-chaîne sur toute la page.
+- **Le libellé reste l'ID.** Aucun nom de carte n'entre dans le HTML : c'est la page cible
+  qui nomme la carte.
+
+Cible retenue : `https://onepiece.limitlesstcg.com/cards/{id}`. C'est déjà la source amont
+que le site crédite, la page y nomme et illustre la carte légalement, et sa durabilité ne
+repose pas sur un service personnel. Le gabarit étant un paramètre, en changer n'est pas
+une modification de code.
+
+**Coût mesuré, à connaître avant d'activer** : sur le corpus réel la page la plus lourde
+(`/leaders/op14-020/`) porte 1066 puces pour 248 Ko ; les liens y ajoutent ~90 Ko, soit
++36 %. C'est précisément la raison pour laquelle le drapeau est opt-in et non le défaut —
+le plafond de 24 listes par section existe déjà parce qu'une page d'un demi-mégaoctet est
+illisible en mobile.
+
 ### Accords et redites
 
 - **Aucun pluriel parenthésé** (`carte(s)`, `liste(s)`, `tournoi(s)`…). Le nombre est
@@ -380,6 +408,10 @@ distante, pas de requête réseau sortante depuis les pages produites.
 ```bash
 python3 -m sitegen.build --packs-dir ../optcgsim-deckpacks-data/packs \
                          --out dist --base-url https://exemple.org
+
+# avec le lien par carte (opt-in, cf. § « Lien par carte »)
+python3 -m sitegen.build --out dist --base-url https://exemple.org \
+                         --card-link-base 'https://onepiece.limitlesstcg.com/cards/{id}'
 ```
 
 Sortie sur stdout : nombre de tournois, decks, archétypes, pages écrites, et la liste des
