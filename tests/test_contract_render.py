@@ -37,10 +37,10 @@ def test_emet_exactement_les_pages_du_contrat(built):
         "formats/op15/index.html",
         "formats/op16/index.html",
         "formats/op16-5/index.html",
-        "tournois/2026-07-04-regional-bielefeld/index.html",
-        "tournois/2026-04-01-regional-ancien/index.html",
-        "tournois/2026-04-15-treasure-cup-noyau/index.html",
-        "tournois/2026-06-15-chinoizecup-avance/index.html",
+        "tournaments/2026-07-04-regional-bielefeld/index.html",
+        "tournaments/2026-04-01-regional-ancien/index.html",
+        "tournaments/2026-04-15-treasure-cup-noyau/index.html",
+        "tournaments/2026-06-15-chinoizecup-avance/index.html",
         # Identité = ID de la carte de leader, pas le nom parsé (cf. Deck.archetype_slug).
         # OP11-041 est le leader du deck non parsable : sans placement ni joueur il n'entre
         # dans aucune vue agrégée, donc pas de page.
@@ -60,9 +60,9 @@ def test_pas_de_page_html_par_deck(built):
 
 def test_commande_import_presente_et_absolue(built):
     out, _ = built
-    cmd = (f"studio decks import-pack {BASE}/tournois/"
+    cmd = (f"studio decks import-pack {BASE}/tournaments/"
            "2026-07-04-regional-bielefeld/deckpack.json")
-    assert cmd in _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    assert cmd in _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     assert f"studio decks import-pack {BASE}/leaders/op15-058/deckpack.json" in \
         _html(out, "leaders/op15-058/index.html")
     assert f"studio decks import-pack {BASE}/meta/deckpack.json" in _html(out, "meta/index.html")
@@ -88,7 +88,7 @@ def test_bloc_import_avant_toute_prose(built):
 
 def test_page_tournoi_montre_placements_joueurs_et_ids(built):
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     assert "Luka Forjan" in page and "Purple Enel" in page
     assert "OP15-058" in page and "OP15-061" in page
     # le deck non parsable reste affiché, sous son nom brut
@@ -129,7 +129,7 @@ def test_description_brute_non_affichee(built):
     repoussant le premier deck à ~685 px du haut en mobile.
     """
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     assert "region=Europe" not in page
     assert "time=3months" not in page
     assert "Scraped from" not in page
@@ -139,7 +139,7 @@ def test_description_brute_non_affichee(built):
 def test_decks_replies_dans_details(built):
     """P3 — 16 decklists dépliées faisaient 8 écrans de défilement en mobile."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     # 3 decks dans la fixture, chacun replié, plus le premier ouvert.
     assert page.count("<summary") >= 3, "chaque deck doit avoir un summary scannable"
     assert re.search(r"<details[^>]*\sopen", page), "le premier deck doit être ouvert"
@@ -151,7 +151,7 @@ def test_decks_replies_dans_details(built):
 def test_cartes_triees_par_quantite_decroissante(built):
     """P4 — l'ordre source empêchait de comparer deux listes du même archétype."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     # Sur le TEXTE rendu, pas sur le HTML brut : ce test porte sur l'ORDRE des cartes, et
     # ne doit rien imposer au balisage. Sa version précédente regexait la source, donc
     # exigeait que le chiffre et le « x » soient collés — ce qui interdisait le
@@ -180,7 +180,7 @@ def test_le_tri_daffichage_ne_touche_pas_les_packs(site, tmp_path):
 def test_placement_sans_exposant(built):
     """P6 — `1<sup>st</sup>` s'affichait « 1 st », lu comme une coquille."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     assert "<sup" not in page.lower()
     assert "1st" in page
 
@@ -342,7 +342,7 @@ def test_placement_de_tete_distingue(built):
     """Une page de 16 decks doit se parcourir des yeux : le podium se distingue, le
     reste reste calme."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     css = _html(out, "style.css")
     assert re.search(r"""class=["'][^"']*(rank|place|podium)[^"']*["']""", page), \
         "le placement doit porter une classe pour être distingué"
@@ -354,7 +354,7 @@ def test_puce_de_carte_distingue_quantite_et_id(built):
     """Un 4-of doit se lire comme la colonne vertébrale du deck, et une quantité
     inhabituelle (cartes sans limite, jouées à 8 ou 9) doit sauter aux yeux."""
     out, _ = built
-    for rel in ("tournois/2026-07-04-regional-bielefeld/index.html",
+    for rel in ("tournaments/2026-07-04-regional-bielefeld/index.html",
                 "leaders/op15-058/index.html"):
         page = _html(out, rel)
         # La quantité d'une CARTE, pas le total du deck : on exige le motif suivi d'un
@@ -370,7 +370,7 @@ def test_attribution_sans_libelle_duplique(built):
     """« Source : Limitless · Limitless » — deux URL de la même source donnaient deux fois
     le même libellé, ce qui ressemble à un bug d'affichage."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     # Fenêtre volontairement large : à 220 caractères elle coupait avant le second `</a>`,
     # le test ne voyait qu'un libellé et passait alors que la duplication était bien là.
     # Et pas de `if` — un test qui ne trouve pas son sujet doit échouer, pas se taire.
@@ -388,7 +388,7 @@ def test_attribution_porte_un_libelle_lisible(built):
     Le nom de la source (« Limitless ») dit en un mot ce que l'URL dit en deux lignes.
     """
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     assert ">https://" not in page, "le texte du lien ne doit pas être l'URL brute"
     assert re.search(r"<a\s[^>]*limitlesstcg[^>]*>[^<]*[Ll]imitless", page), \
         "le lien de source doit être libellé par le nom du site"
@@ -397,7 +397,7 @@ def test_attribution_porte_un_libelle_lisible(built):
 def test_pas_de_leader_en_double(built):
     """Le `<summary>` porte déjà le leader : le répéter dans le corps est du bruit."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     assert "Leader :" not in page
     premier = re.search(r"<summary[^>]*>(.*?)</summary>", page, re.DOTALL).group(1)
     assert "OP15-058" in premier, "le summary doit porter le leader"
@@ -634,7 +634,7 @@ def test_page_leader_offre_l_import_par_deck(built):
     page = _html(out, "leaders/op15-058/index.html")
     # Chaque liste porte une commande d'import qui lui est propre, vers le pack d'un deck.
     assert re.search(
-        rf"studio decks import-pack {re.escape(BASE)}/tournois/[^/]+/decks/[^\s\"'<]+\.json",
+        rf"studio decks import-pack {re.escape(BASE)}/tournaments/[^/]+/decks/[^\s\"'<]+\.json",
         page), "aucune commande d'import par deck sur la page de leader"
 
 
@@ -644,7 +644,7 @@ def test_page_leader_relegue_l_import_en_bloc(built):
     out, _ = built
     page = _html(out, "leaders/op15-058/index.html")
     i_bloc = page.find(f"{BASE}/leaders/op15-058/deckpack.json")
-    i_deck = page.find(f"{BASE}/tournois/")
+    i_deck = page.find(f"{BASE}/tournaments/")
     assert i_deck > 0, "aucune action par deck trouvée"
     assert i_bloc < 0 or i_deck < i_bloc, \
         "l'import par deck doit précéder l'import en bloc sur une page de leader"
@@ -656,7 +656,7 @@ def test_deck_copiable_au_format_natif(built):
     C'est ce qui ouvre le site à quiconque joue, donc un chemin de premier plan.
     """
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     css = _html(out, "style.css").replace(" ", "").replace("\n", "")
     # La decklist native, verbatim, dans un bloc dédié et sélectionnable d'un geste.
     assert re.search(r"""class=["'][^"']*(decklist)[^"']*["']""", page), \
@@ -744,7 +744,7 @@ def test_attribution_de_la_source(built):
     `nofollow` pour ne pas leur promettre de poids SEO.
     """
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
     lien = re.search(
         r"""<a\s[^>]*href=["']https://onepiece\.limitlesstcg\.com/tournaments/431["'][^>]*>""",
         page, re.IGNORECASE)
@@ -865,3 +865,53 @@ def test_le_lien_par_carte_ne_lie_jamais_la_quantite(site, tmp_path):
         for attr in ("src=", "srcset=", "data-src="):
             assert attr not in text, \
                 f"sous-ressource ({attr}) introduite avec le lien par carte : {p.name}"
+
+
+def test_le_format_courant_dit_de_quel_circuit_il_vient(tmp_path):
+    """Quand le papier a été doublé, « Current format » désigne un format joué EN LIGNE
+    seulement. La page doit le dire, et dire où en est le papier.
+
+    Sans cette mention, un joueur qui prépare un regional lirait « Current format : OP17 »
+    et construirait pour un format qu'aucun tournoi sur table n'a encore joué. Le rôle est
+    juste ; c'est la mention qui le rend utilisable.
+    """
+    from datetime import date
+
+    from sitegen.model import Site, Tournament
+
+    def _t(slug, d, fmt, circuit):
+        return Tournament(slug, slug, d, "", "", (), format=fmt, circuit=circuit)
+
+    site = Site(tournaments=(
+        _t("2026-07-26-papier", date(2026, 7, 26), "OP16", "paper"),
+        _t("2026-08-12-sim", date(2026, 8, 12), "OP16.5", "online"),
+        _t("2026-09-01-sim", date(2026, 9, 1), "OP17", "online"),
+    ))
+    render.write_pages(site, tmp_path, base_url=BASE)
+    index = _html(tmp_path, "index.html")
+
+    bloc = re.search(r"<h3>Current format</h3>(.*?)</section>", index, re.S)
+    assert bloc, "la section du format courant a disparu de l'index"
+    note = re.sub(r"<[^>]+>", " ", bloc.group(1))
+    assert "online" in note.lower(), "le circuit du format courant n'est pas annoncé"
+    assert "OP16" in note, "l'index n'indique pas où en est le circuit papier"
+    assert "26 July 2026" in note, "l'index ne date pas le dernier tournoi papier"
+
+    # Et la page du format porte la même mention : on y arrive aussi en lien direct.
+    page = _html(tmp_path, "formats/op17/index.html")
+    assert "Current format" in page
+    assert "OP16" in re.sub(r"<[^>]+>", " ",
+                            re.search(r'class="format-role-label[^"]*"[^>]*>(.*?)</p>',
+                                      page, re.S).group(1))
+
+
+def test_pas_de_mention_de_circuit_quand_le_papier_donne_l_heure(built):
+    """La contrepartie : en régime normal, aucune mention parasite.
+
+    Le fixture a un papier OP16 et un seul format d'avance — le décalage voulu. Ajouter la
+    mention là aussi la banaliserait jusqu'à ce que plus personne ne la lise.
+    """
+    out, _ = built
+    bloc = re.search(r"<h3>Current format</h3>(.*?)</section>", _html(out, "index.html"), re.S)
+    assert bloc
+    assert "no paper tournament" not in re.sub(r"<[^>]+>", " ", bloc.group(1)).lower()

@@ -42,10 +42,10 @@ def expected_paths(site) -> set[str]:
     out = {"index.html", "style.css", "favicon.svg",
            "meta/index.html", "meta/deckpack.json"}
     for t in site.tournaments:
-        out.add(f"tournois/{t.slug}/index.html")
-        out.add(f"tournois/{t.slug}/deckpack.json")
+        out.add(f"tournaments/{t.slug}/index.html")
+        out.add(f"tournaments/{t.slug}/deckpack.json")
         for d in t.decks:
-            out.add(f"tournois/{t.slug}/decks/{d.slug}.json")
+            out.add(f"tournaments/{t.slug}/decks/{d.slug}.json")
     for aslug in site.leaders():
         out.add(f"leaders/{aslug}/index.html")
         out.add(f"leaders/{aslug}/deckpack.json")
@@ -151,7 +151,7 @@ def check_packs_valid(dist: Path) -> list[str]:
                         + (r.stdout + r.stderr).strip())
 
     # Les packs de deck isolé ne s'appellent pas deckpack.json : on les met en scène.
-    singles = sorted(dist.glob("tournois/*/decks/*.json"))
+    singles = sorted(dist.glob("tournaments/*/decks/*.json"))
     if singles:
         with tempfile.TemporaryDirectory() as tmp:
             staged = []
@@ -252,6 +252,37 @@ def check_studio_resolves(dist: Path) -> list[str]:
     return errs
 
 
+def check_internal_links(dist: Path) -> list[str]:
+    """Tout `<a href>` interne pointe sur un fichier qui existe.
+
+    `check_url_map` compare l'ARBORESCENCE produite au contrat ; il ne regarde pas les liens.
+    Les deux peuvent diverger, et c'est exactement ce qu'un renommage à moitié fait produit :
+    les packs écrits sous `tournaments/` pendant qu'un gabarit lie encore `tournois/` donnent
+    un site dont chaque fichier est au contrat et dont chaque lien est mort.
+    """
+    fichiers = {p.relative_to(dist).as_posix() for p in dist.rglob("*") if p.is_file()}
+    errs = []
+    for p in sorted(dist.rglob("*.html")):
+        rel = p.relative_to(dist)
+        for href in re.findall(r"""<a\s[^>]*href\s*=\s*["']([^"']+)""",
+                               p.read_text(encoding="utf-8"), re.IGNORECASE):
+            if href.startswith(("http://", "https://", "#", "mailto:")):
+                continue
+            parts: list[str] = []
+            for seg in (rel.parent / href.split("#")[0]).as_posix().split("/"):
+                if seg == "..":
+                    if parts:
+                        parts.pop()
+                elif seg not in ("", "."):
+                    parts.append(seg)
+            cible = "/".join(parts)
+            if not cible or "." not in parts[-1]:
+                cible = (cible + "/index.html").lstrip("/")
+            if cible not in fichiers:
+                errs.append(f"{rel.as_posix()} : lien mort {href} (cible {cible})")
+    return errs
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print(__doc__)
@@ -276,6 +307,7 @@ def main(argv: list[str]) -> int:
     etapes = [
         ("packs valides (validateur de la spec)", check_packs_valid(dist)),
         ("carte des URLs conforme au contrat", check_url_map(dist, site)),
+        ("liens internes tous résolus", check_internal_links(dist)),
         ("aucune requête réseau sortante", check_no_outbound(dist, base_url)),
         ("aucun contenu sous copyright", check_no_card_names(dist)),
         ("cohérence format / pool de cartes", check_format_coherence(site)),

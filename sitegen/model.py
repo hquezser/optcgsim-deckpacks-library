@@ -18,6 +18,18 @@ __all__ = ["slugify", "Deck", "Tournament", "Site", "BuildWarning"]
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
+# De combien de formats le circuit papier a le droit d'être en retard sur le circuit en
+# ligne avant qu'on cesse de le prendre comme référence. Un, c'est le décalage NORMAL, celui
+# autour duquel le site est construit : le simulateur reçoit les sets en avance, donc « à
+# venir » est le format déjà joué en ligne pendant que le papier finit le précédent.
+#
+# Pas un délai en jours : mesuré sur le corpus, le circuit papier a connu 49 jours sans
+# tournoi EN PLEINE SAISON (2026-05-02 -> 2026-06-20), soit plus que les 37 jours de la
+# pause en cours. Aucun seuil temporel ne sépare « entre deux week-ends » de « à l'arrêt ».
+# Le nombre de formats, si : un papier doublé de DEUX formats n'est plus en retard, il a été
+# dépassé, et le format qu'il joue n'est plus joué nulle part.
+PAPER_LAG_MAX = 1
+
 
 def slugify(value: str) -> str:
     """Minuscules, toute suite de non-alphanumériques -> '-', tirets aux bords retirés.
@@ -177,25 +189,69 @@ class Site:
         return {k: tuple(v) for k, v in sorted(out.items())}
 
     @property
-    def current_format(self) -> str:
-        """format_slug du dernier format joué sur le **circuit papier**. "" si indéterminable.
+    def paper_format(self) -> str:
+        """Dernier format joué sur le circuit papier. "" si le corpus n'en a aucun."""
+        for t in self.sorted_tournaments:
+            if not t.is_online and t.format_slug:
+                return t.format_slug
+        return ""
 
-        Volontairement PAS « le format du tournoi le plus récent » : le simulateur reçoit les
-        sets en avance, donc le tournoi le plus récent est presque toujours en ligne et en
-        avance. Cette définition-là faisait basculer « courant » sur un format que presque
-        personne ne joue encore, et vidait « à venir » — elle effaçait le décalage qu'elle
-        devait mettre en valeur.
+    @property
+    def paper_is_lapped(self) -> bool:
+        """Le circuit papier a-t-il été DOUBLÉ par le circuit en ligne ? (cf. PAPER_LAG_MAX)
 
-        Le circuit papier est le repère stable : c'est le format que la majorité des joueurs
-        pratique. Repli sur tous les circuits si le corpus n'a aucun tournoi papier.
+        Un format d'avance est le régime normal et voulu. Deux, c'est que le papier s'est
+        arrêté assez longtemps pour qu'un format entier naisse et meure en ligne sans lui —
+        et son format à lui n'est alors plus joué nulle part.
         """
-        for source in (
-            (t for t in self.sorted_tournaments if not t.is_online),
-            self.sorted_tournaments,
-        ):
-            for t in source:
-                if t.format_slug:
-                    return t.format_slug
+        from .formats import format_key
+
+        pf = self.paper_format
+        if not pf:
+            return True
+        k = format_key(self.format_label(pf))
+        return sum(1 for f in self.formats()
+                   if format_key(self.format_label(f)) > k) > PAPER_LAG_MAX
+
+    @property
+    def current_format_circuit(self) -> str:
+        """Circuit d'où vient `current_format` : « paper », « online », ou "".
+
+        Le rendu en a besoin pour dire la vérité : annoncer OP17 « courant » sans préciser
+        qu'aucun tournoi papier ne l'a encore joué serait un raccourci trompeur.
+        """
+        cf = self.current_format
+        if not cf:
+            return ""
+        return "paper" if cf == self.paper_format else "online"
+
+    @property
+    def current_format(self) -> str:
+        """format_slug du format qu'on joue MAINTENANT. "" si indéterminable.
+
+        **Le circuit papier donne l'heure tant qu'il n'a pas été doublé.** Volontairement PAS
+        « le format du tournoi le plus récent » : le simulateur reçoit les sets en avance,
+        donc le tournoi le plus récent est presque toujours en ligne et en avance. Cette
+        définition-là faisait basculer « courant » sur un format que presque personne ne joue
+        encore, et vidait « à venir » — elle effaçait le décalage qu'elle devait mettre en
+        valeur.
+
+        Mais s'y accrocher sans condition produit le défaut inverse, mesuré au 2026-09-03 :
+        « courant » affichait OP16, dont le dernier tournoi datait de 38 jours, et rangeait
+        sous « à venir » un OP16.5 déjà terminé (15 juillet – 12 août) à côté d'un OP17 joué
+        la veille. Le site annonçait comme courant un format que plus personne ne jouait, et
+        comme à venir un format déjà passé.
+
+        D'où la condition : le papier reste la référence tant qu'il n'a qu'un format de
+        retard (`PAPER_LAG_MAX`). Doublé de deux, il a été dépassé et le relais passe au
+        format effectivement joué. Repli sur tous les circuits si le corpus n'a aucun
+        tournoi papier.
+        """
+        if not self.paper_is_lapped:
+            return self.paper_format
+        for t in self.sorted_tournaments:
+            if t.format_slug:
+                return t.format_slug
         return ""
 
     def format_label(self, format_slug: str) -> str:

@@ -77,12 +77,12 @@ def written(site, tmp_path):
 def test_write_packs_emet_les_chemins_du_contrat(written):
     out, paths = written
     rel = {p.relative_to(out).as_posix() for p in paths}
-    assert "tournois/2026-07-04-regional-bielefeld/deckpack.json" in rel
+    assert "tournaments/2026-07-04-regional-bielefeld/deckpack.json" in rel
     assert "leaders/op15-058/deckpack.json" in rel
     assert "meta/deckpack.json" in rel
     # un pack d'un seul deck par deck, y compris le non parsable
-    assert "tournois/2026-07-04-regional-bielefeld/decks/01-purple-enel-luka-forjan.json" in rel
-    assert ("tournois/2026-07-04-regional-bielefeld/decks/"
+    assert "tournaments/2026-07-04-regional-bielefeld/decks/01-purple-enel-luka-forjan.json" in rel
+    assert ("tournaments/2026-07-04-regional-bielefeld/decks/"
             "xx-nom-sans-structure-reconnaissable.json") in rel
     # tous les chemins annoncés existent réellement
     assert all(p.exists() for p in paths)

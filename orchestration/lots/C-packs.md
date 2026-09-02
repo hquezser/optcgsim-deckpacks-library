@@ -45,8 +45,8 @@ Fichiers à produire (l'ensemble exact est vérifié) :
 
 | Chemin | Contenu |
 |---|---|
-| `tournois/<tslug>/deckpack.json` | tous les decks du tournoi, y compris les non parsables |
-| `tournois/<tslug>/decks/<dslug>.json` | un pack d'un seul deck (pour l'import unitaire) |
+| `tournaments/<tslug>/deckpack.json` | tous les decks du tournoi, y compris les non parsables |
+| `tournaments/<tslug>/decks/<dslug>.json` | un pack d'un seul deck (pour l'import unitaire) |
 | `leaders/<aslug>/deckpack.json` | toutes les listes de cet archétype, tous tournois |
 | `meta/deckpack.json` | l'instantané du méta courant |
 

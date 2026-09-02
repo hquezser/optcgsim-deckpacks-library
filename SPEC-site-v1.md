@@ -27,7 +27,7 @@ L'import EN BLOC n'a de sens que si le pack est **varié**. Mesuré sur le corpu
 Importer 72 listes Enel remplit le simulateur de decks à deux cartes d'écart : la *page* est
 utile pour comparer, l'import en bloc de cette page ne l'est pas.
 
-- **`/tournois/`** et **`/meta/`** : l'import en bloc est le héros. Le pack est varié, et
+- **`/tournaments/`** et **`/meta/`** : l'import en bloc est le héros. Le pack est varié, et
   l'importer sert un vrai besoin (s'entraîner contre le méta).
 - **`/leaders/`** et **`/formats/`** : le héros est l'action **par deck**. Le pack complet
   reste offert — c'est un inventaire légitime, et son URL est publique — mais **relégué**,
@@ -37,7 +37,7 @@ utile pour comparer, l'import en bloc de cette page ne l'est pas.
 
 Un deck isolé se prend de deux manières, et les deux comptent :
 
-1. **`studio decks import-pack <url>`** vers `/tournois/<tslug>/decks/<dslug>.json`, comme
+1. **`studio decks import-pack <url>`** vers `/tournaments/<tslug>/decks/<dslug>.json`, comme
    ailleurs sur le site.
 2. **Copier/coller la decklist au format natif** du simulateur (`Deck.text` verbatim,
    `1xOP15-058` par ligne). **Ça ne demande AUCUNE installation** — ni studio, ni terminal —
@@ -160,9 +160,9 @@ Si `placement is None` : `f"xx-{slug(raw_name)}"`.
 
 ```
 /index.html                                    tournois récents + formats + index des leaders
-/tournois/<tslug>/index.html                   un tournoi : ses decks
-/tournois/<tslug>/deckpack.json                le pack complet du tournoi
-/tournois/<tslug>/decks/<dslug>.json           un deck seul, en pack d'un élément
+/tournaments/<tslug>/index.html                   un tournoi : ses decks
+/tournaments/<tslug>/deckpack.json                le pack complet du tournoi
+/tournaments/<tslug>/decks/<dslug>.json           un deck seul, en pack d'un élément
 /formats/<fslug>/index.html                    les archétypes d'un format (« la méta »)
 /formats/<fslug>/deckpack.json                 pack : tout ce format
 /leaders/<aslug>/index.html                    les listes de cet archétype, par format
@@ -235,11 +235,36 @@ Le simulateur reçoit les sets avant le circuit papier, donc un format peut déj
 ligne quand les tournois papier en sont encore au précédent — et il peut y en avoir
 **plusieurs** en avance à la fois (OP16.5 puis OP17).
 
-- **courant** = `Site.current_format`, le format du tournoi le plus récent. C'est ce que la
-  majorité joue, et c'est lui qui alimente `/meta/`.
-- **à venir** = `Site.upcoming_formats`, tous les formats postérieurs présents, du plus
-  proche au plus lointain.
+- **courant** = `Site.current_format`. **Le circuit papier donne l'heure tant qu'il n'a pas
+  été doublé.** Pas « le format du tournoi le plus récent » : le tournoi le plus récent est
+  presque toujours en ligne et en avance, et cette définition-là vidait « à venir » de sa
+  substance en effaçant le décalage qu'elle devait montrer.
+- **à venir** = `Site.upcoming_formats`, tous les formats postérieurs au courant, du plus
+  proche au plus lointain. **Peut être vide**, et le rendu doit le supporter.
 - **passés** = `Site.past_formats`, du plus récent au plus ancien.
+
+#### Quand le papier se fait doubler
+
+S'accrocher au papier sans condition produit le défaut inverse, mesuré au 2026-09-03 :
+« courant » affichait OP16, dont le dernier tournoi datait de 38 jours, et rangeait sous
+« à venir » un OP16.5 **déjà terminé** (15 juillet – 12 août) à côté d'un OP17 joué la
+veille. Le site annonçait comme courant un format que plus personne ne jouait, et comme à
+venir un format déjà passé.
+
+D'où `PAPER_LAG_MAX = 1` : le papier reste la référence tant qu'il n'a **qu'un** format de
+retard — le décalage normal, celui autour duquel le site est bâti. Doublé de **deux**, il a
+été dépassé (un format entier est né et mort en ligne sans lui) et le relais passe au format
+effectivement joué.
+
+**Le retard se compte en formats, jamais en jours.** Un seuil de fraîcheur a été essayé et
+rejeté : sur le corpus réel, le circuit papier a connu 49 jours sans tournoi *en pleine
+saison* (2026-05-02 → 2026-06-20), soit plus que les 37 jours de la pause qu'on cherchait à
+détecter. Aucun seuil temporel ne sépare « entre deux week-ends » de « à l'arrêt ».
+
+Quand le courant vient du circuit en ligne (`Site.current_format_circuit == "online"`),
+l'index **et** la page du format doivent l'annoncer et dire où en est le papier — sinon un
+joueur qui prépare un regional construit pour un format qu'aucune table n'a encore joué.
+En régime normal, aucune mention : la banaliser reviendrait à ce que personne ne la lise.
 
 Ce sont des **rôles, pas des identités** : les formats gardent leurs codes réels (`OP16`,
 `OP16.5`, `OP17`) et leurs URLs `/formats/<fslug>/`. On annote, on ne renomme jamais — et on
@@ -247,7 +272,7 @@ n'invente aucune URL du type `/formats/a-venir/`.
 
 Chaque page `/formats/<fslug>/` annonce son propre rôle : un visiteur qui y arrive
 directement doit savoir s'il regarde le méta courant ou un méta à venir.
-- **`/tournois/<tslug>/`** : bloc import du pack complet. Puis les decks triés par
+- **`/tournaments/<tslug>/`** : bloc import du pack complet. Puis les decks triés par
   placement croissant (non parsés en fin de liste) ; par deck : placement, archétype,
   joueur, leader, la liste des cartes, et sa commande d'import individuelle.
 

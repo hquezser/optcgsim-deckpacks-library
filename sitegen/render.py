@@ -293,14 +293,48 @@ def _write(out: Path, rel: str, content: str) -> Path:
     return target
 
 
-def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
+def _card_ref(card_link_base: str):
+    """Fabrique le filtre `card_ref` : un ID de carte, lié ou non.
+
+    Drapeau absent -> l'ID nu, sortie identique octet pour octet à avant. Drapeau présent ->
+    un `<a>` vers le gabarit fourni, avec `rel="noreferrer nofollow"` (ne pas fuiter le
+    référent du visiteur, ne pas promettre de poids SEO — même contrat que l'attribution de
+    source) et `target="_blank"`.
+
+    Le libellé reste l'ID : lier n'est pas afficher. L'invariant « aucun nom de carte, aucune
+    image » tient, parce qu'un `<a href>` n'est pas une sous-ressource — le navigateur ne va
+    rien chercher tant que le visiteur ne clique pas (cf. check_dist.check_no_outbound).
+    """
+    gabarit = card_link_base.strip()
+
+    def filtre(card_id: str) -> Markup:
+        ident = escape(card_id)
+        if not gabarit:
+            return Markup(ident)
+        # `{id}` est la forme du contrat. Un gabarit qui n'en a pas est traité comme un
+        # préfixe : mieux vaut un lien correct qu'une URL portant un « {id} » littéral.
+        url = (gabarit.replace("{id}", str(ident)) if "{id}" in gabarit
+               else f'{gabarit.rstrip("/")}/{ident}')
+        return Markup(f'<a href="{escape(url)}" rel="noreferrer nofollow" '
+                      f'target="_blank">{ident}</a>')
+
+    return filtre
+
+
+def write_pages(site: Site, out: Path, base_url: str,
+                card_link_base: str = "") -> list[Path]:
     """Écrit les pages HTML + `style.css` sous `out`. Renvoie la liste exacte des
     chemins écrits, dans un ordre déterministe.
+
+    `card_link_base` (optionnel) : gabarit d'URL vers une base de cartes tierce. Absent —
+    le défaut —, la sortie ne contient aucun lien de carte et reste identique à celle
+    d'avant l'amendement.
     """
     out = Path(out)
     base_url = base_url.rstrip("/")
     templates_dir = Path(__file__).parent / "templates"
     env = _env(templates_dir)
+    env.filters["card_ref"] = _card_ref(card_link_base)
 
     written: list[Path] = []
     # `base_url` n'est utilisé QUE pour la commande d'import affichée (qui doit rester
@@ -360,6 +394,19 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     current = site.current_format
     upcoming = site.upcoming_formats
     past = site.past_formats
+    # Quand le papier a été doublé, « courant » désigne un format joué EN LIGNE seulement.
+    # Le dire, et dire où en est le papier : un visiteur qui prépare un regional doit savoir
+    # que ce format n'a encore été joué sur aucune table.
+    dernier_papier = max((t.date for t in site.tournaments
+                          if not t.is_online and t.date and t.format_slug), default=None)
+    circuit_note = ""
+    if site.current_format_circuit == "online":
+        circuit_note = "Played online only — no paper tournament has used it yet."
+        if site.paper_format:
+            circuit_note += (f" The paper circuit is still on "
+                             f"{site.format_label(site.paper_format)}")
+            circuit_note += (f", last played {dernier_papier:%-d %B %Y}."
+                             if dernier_papier else ".")
     row_by_fslug = {r[0]: r for r in format_rows}
     format_groups = [
         ("courant", "Current format",
@@ -377,6 +424,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         archetype_rows=archetype_rows,
         format_rows=format_rows,
         format_groups=format_groups,
+        circuit_note=circuit_note,
         meta_count=len(meta_pairs(site)),
         rel="",
         **ctx_common,
@@ -385,7 +433,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     # --- une page par tournoi (profondeur 2) -------------------------------
     tournoi_tpl = env.get_template("tournoi.html")
     for t in site.sorted_tournaments:
-        pack_url = f"/tournois/{t.slug}/deckpack.json"
+        pack_url = f"/tournaments/{t.slug}/deckpack.json"
         # Decks triés par placement croissant ; les non parsés (placement None)
         # en fin de liste, par ordre de raw_name pour déterminisme.
         decks_sorted = sorted(
@@ -405,7 +453,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             **ctx_common,
         )
         written.append(_write(
-            out, f"tournois/{t.slug}/index.html", page
+            out, f"tournaments/{t.slug}/index.html", page
         ))
 
     # --- une page par format (profondeur 2) --------------------------------
@@ -415,9 +463,11 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
         label = site.format_label(fslug)
         # Rôle du format pour cette page : un visiteur arrivant directement
         # doit savoir s'il regarde le méta courant ou un méta à venir.
+        role_note = ""
         if fslug == site.current_format and fslug:
             role_label = "Current format"
             role_key = "courant"
+            role_note = circuit_note
         elif fslug in upcoming:
             role_label = "Upcoming format"
             role_key = "a-venir"
@@ -443,6 +493,7 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
             format_label=label,
             role_label=role_label,
             role_key=role_key,
+            role_note=role_note,
             tournaments=ts,
             total_lists=total_lists,
             archetype_rows=f_arch_rows,

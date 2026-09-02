@@ -6,7 +6,7 @@
 
 <section class="page-head">
   <h1>{{ format_label }}</h1>
-  {% if role_label %}<p class="format-role-label role-{{ role_key }}">{{ role_label }}</p>{% endif %}
+  {% if role_label %}<p class="format-role-label role-{{ role_key }}">{{ role_label }}{% if role_note %} — {{ role_note }}{% endif %}</p>{% endif %}
   <p class="page-meta">{{ tournaments | length }} {{ tournaments | length | plur("tournament") }} — {{ total_lists }} {{ total_lists | plur("list") }}.</p>
 </section>
 

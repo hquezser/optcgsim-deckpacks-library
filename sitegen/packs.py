@@ -103,8 +103,8 @@ def write_packs(site: Site, out: Path) -> list[Path]:
     """Écrit tous les packs sous `out`. Renvoie la liste exacte des chemins écrits.
 
     L'ensemble des chemins est dicté par la SPEC § « Carte des URLs » :
-      - tournois/<tslug>/deckpack.json         tous les decks du tournoi
-      - tournois/<tslug>/decks/<dslug>.json    un pack d'un seul deck (import unitaire)
+      - tournaments/<tslug>/deckpack.json         tous les decks du tournoi
+      - tournaments/<tslug>/decks/<dslug>.json    un pack d'un seul deck (import unitaire)
       - leaders/<aslug>/deckpack.json          toutes les listes de cet archétype
       - meta/deckpack.json                     l'instantané du méta courant
     """
@@ -114,7 +114,7 @@ def write_packs(site: Site, out: Path) -> list[Path]:
     # 1. Par tournoi : pack complet + un pack par deck (y compris non parsables —
     #    ils restent affichables sur leur tournoi, juste exclus des vues agrégées).
     for t in site.sorted_tournaments:
-        tdir = out / "tournois" / t.slug
+        tdir = out / "tournaments" / t.slug
         pairs = tuple((t, d) for d in t.decks)
         manifest = build_pack(
             name=t.name or t.slug,

@@ -20,6 +20,7 @@
     {% if rows %}
     <section class="format-role format-{{ role_key }}">
       <h3>{{ role_title }}</h3>
+      {% if role_key == "courant" and circuit_note %}<p class="format-role-note">{{ circuit_note }}</p>{% endif %}
       <ul class="format-list">
         {% for fslug, label, n_tour, n_lists in rows %}
         <li>
@@ -47,7 +48,7 @@
   <ol class="tournament-list">
     {% for t in recent_tournaments %}
     <li>
-      <a href="{{ rel }}tournois/{{ t.slug }}/">
+      <a href="{{ rel }}tournaments/{{ t.slug }}/">
         <span class="t-name">{{ t.name }}</span>
         <span class="t-date">{{ t.date if t.date else "unknown date" }}</span>
         {% if t.format %}<span class="t-format">{{ t.format }}</span>{% endif %}

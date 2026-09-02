@@ -38,7 +38,7 @@
         <div class="deck-body">
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
-            <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+            <li><code><span class="qty">{{ qty }}</span>x {{ card_id | card_ref }}</code></li>
             {% endfor %}
           </ul>
           <details class="decklist-native" open>
@@ -47,7 +47,7 @@
           </details>
           <details class="deck-import-single">
             <summary>Import this deck alone via studio</summary>
-            <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ tournament.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
+            <pre class="import-cmd"><code>{{ import_command(base_url, '/tournaments/' ~ tournament.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
           </details>
         </div>
         {% else %}
@@ -55,7 +55,7 @@
           <p class="d-raw">Unstructured name: <code>{{ d.raw_name }}</code></p>
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
-            <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+            <li><code><span class="qty">{{ qty }}</span>x {{ card_id | card_ref }}</code></li>
             {% endfor %}
           </ul>
           <details class="decklist-native" open>

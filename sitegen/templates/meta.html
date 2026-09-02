@@ -26,13 +26,13 @@
             <span class="d-leader-id">leader <code>{{ d.leader_id }}</code></span>
           </summary>
           <p class="d-provenance">
-            <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
+            <a href="{{ rel }}tournaments/{{ t.slug }}/">{{ t.name }}</a>
             — <span class="t-date">{{ t.date if t.date else "unknown date" }}</span>
           </p>
           <div class="deck-body">
             <ul class="card-list">
               {% for card_id, qty in d.cards | sort_cards %}
-              <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+              <li><code><span class="qty">{{ qty }}</span>x {{ card_id | card_ref }}</code></li>
               {% endfor %}
             </ul>
           </div>

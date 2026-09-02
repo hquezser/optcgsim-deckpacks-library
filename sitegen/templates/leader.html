@@ -30,7 +30,7 @@
         <span class="core-hint">(present in ≥ 80% of lists)</span></summary>
       <ul class="card-list">
         {% for card_id, qty in section.core_items %}
-        <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+        <li><code><span class="qty">{{ qty }}</span>x {{ card_id | card_ref }}</code></li>
         {% endfor %}
       </ul>
     </details>
@@ -58,7 +58,7 @@
           </p>
           {% endif %}
           <p class="d-provenance">
-            <a href="{{ rel }}tournois/{{ t.slug }}/">{{ t.name }}</a>
+            <a href="{{ rel }}tournaments/{{ t.slug }}/">{{ t.name }}</a>
             — <span class="t-date">{{ t.date if t.date else "unknown date" }}</span>
           </p>
           <div class="deck-body">
@@ -67,7 +67,7 @@
             <ul class="card-list">
               {% for card_id, qty_deck, qty_core in delta %}
               <li class="{% if qty_core == 0 %}d-add{% else %}d-adjust{% endif %}">
-                <code><span class="qty">{{ qty_deck }}</span>x {{ card_id }}</code>
+                <code><span class="qty">{{ qty_deck }}</span>x {{ card_id | card_ref }}</code>
                 {% if qty_core > 0 %}<span class="d-core-qty">(core {{ qty_core }}x)</span>{% endif %}
               </li>
               {% endfor %}
@@ -78,13 +78,13 @@
             {% else %}
             <ul class="card-list">
               {% for card_id, qty in d.cards | sort_cards %}
-              <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+              <li><code><span class="qty">{{ qty }}</span>x {{ card_id | card_ref }}</code></li>
               {% endfor %}
             </ul>
             {% endif %}
             <details class="deck-import-single">
               <summary>Import this deck alone via studio</summary>
-              <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ t.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
+              <pre class="import-cmd"><code>{{ import_command(base_url, '/tournaments/' ~ t.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
             </details>
           </div>
         </details>

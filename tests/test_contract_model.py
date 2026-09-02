@@ -126,6 +126,65 @@ def test_courant_ignore_les_tournois_en_ligne_plus_recents():
     assert site.upcoming_formats == ("op16-5",)
 
 
+def test_papier_double_de_deux_formats_cede_la_main():
+    """Le défaut relevé au 2026-09-03 : « courant » figé sur un format que plus personne ne
+    joue, et « à venir » contenant un format DÉJÀ TERMINÉ.
+
+    Corpus réel de ce jour-là : dernier papier OP16 le 26 juillet ; en ligne, OP16.5 du
+    15 juillet au 12 août, puis OP17 depuis le 17 août. Le site annonçait « courant : OP16 »
+    et « à venir : OP16.5, OP17 ». Deux formats d'avance, ce n'est plus le décalage normal
+    du simulateur : c'est un circuit papier dépassé.
+    """
+    papier = _t("2026-07-26-papier", date(2026, 7, 26), "OP16")
+    sim_intermediaire = _t("2026-08-12-sim", date(2026, 8, 12), "OP16.5", circuit="online")
+    sim_vivant = _t("2026-09-01-sim", date(2026, 9, 1), "OP17", circuit="online")
+    site = Site(tournaments=(papier, sim_intermediaire, sim_vivant))
+
+    assert site.paper_format == "op16"
+    assert site.paper_is_lapped
+    assert site.current_format == "op17"
+    assert site.current_format_circuit == "online"
+    # Plus rien « à venir » : les deux formats postérieurs au papier sont l'un passé,
+    # l'autre courant. Une section vide est la réponse honnête.
+    assert site.upcoming_formats == ()
+    # Et surtout : OP16.5 bascule dans les formats PASSÉS, là où il aurait dû être.
+    assert site.past_formats == ("op16-5", "op16")
+
+
+def test_un_seul_format_d_avance_reste_le_regime_normal():
+    """La contrepartie : un format d'avance ne doit RIEN changer.
+
+    C'est le décalage autour duquel le site est construit — le simulateur reçoit les sets en
+    avance. Si cette règle-ci se déclenchait aussi dans ce cas, elle détruirait la notion
+    même de « à venir » qu'elle est censée protéger.
+    """
+    papier = _t("2026-07-26-papier", date(2026, 7, 26), "OP16")
+    sim = _t("2026-08-12-sim", date(2026, 8, 12), "OP16.5", circuit="online")
+    site = Site(tournaments=(papier, sim))
+
+    assert not site.paper_is_lapped
+    assert site.current_format == "op16"
+    assert site.current_format_circuit == "paper"
+    assert site.upcoming_formats == ("op16-5",)
+
+
+def test_le_retard_se_compte_en_formats_pas_en_jours():
+    """Pourquoi pas un seuil de fraîcheur : le corpus réel l'invalide.
+
+    Le circuit papier a connu 49 jours sans tournoi EN PLEINE SAISON (2026-05-02 ->
+    2026-06-20), soit PLUS que les 37 jours de la pause qu'on veut détecter. Un seuil qui
+    attrape la pause attraperait aussi l'intersaison ordinaire, et ferait basculer
+    « courant » sur le simulateur au beau milieu d'une saison papier active.
+    """
+    papier = _t("2026-05-02-papier", date(2026, 5, 2), "OP15")
+    sim = _t("2026-06-20-sim", date(2026, 6, 20), "OP16", circuit="online")
+    site = Site(tournaments=(papier, sim))
+
+    assert (site.reference_date - date(2026, 5, 2)).days == 49
+    assert site.current_format == "op15"       # 49 jours, et pourtant toujours la référence
+    assert site.upcoming_formats == ("op16",)
+
+
 def test_repli_si_le_corpus_n_a_aucun_tournoi_papier():
     sim = _t("2026-07-28-sim", date(2026, 7, 28), "OP16.5", circuit="online")
     assert Site(tournaments=(sim,)).current_format == "op16-5"

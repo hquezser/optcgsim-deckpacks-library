@@ -49,7 +49,7 @@ Pages à produire (et **rien d'autre** — l'ensemble exact est vérifié) :
 | Chemin | Contenu |
 |---|---|
 | `index.html` | 20 tournois les plus récents ; archétypes triés par nombre de listes décroissant ; lien vers `/meta/` |
-| `tournois/<tslug>/index.html` | bloc import du pack ; decks par placement croissant (non parsés en fin) ; par deck : placement, archétype, joueur, leader, cartes, et sa commande d'import individuelle |
+| `tournaments/<tslug>/index.html` | bloc import du pack ; decks par placement croissant (non parsés en fin) ; par deck : placement, archétype, joueur, leader, cartes, et sa commande d'import individuelle |
 | `leaders/<aslug>/index.html` | bloc import ; les listes de l'archétype tous tournois confondus, avec **la provenance de chacune** (nom du tournoi + date) |
 | `meta/index.html` | bloc import ; composition du pack méta, groupée par archétype |
 | `style.css` | une seule feuille, ~200 lignes max |
@@ -238,7 +238,7 @@ en bloc non.
 Lis la section « Quelle action, selon la page » de `SPEC-site-v1.md`, qui fait foi.
 
 1. **Sur `/leaders/` et `/formats/`, l'action par deck devient le héros.** Chaque liste porte
-   sa propre commande, vers `/tournois/<tslug>/decks/<dslug>.json` — ces packs existent déjà
+   sa propre commande, vers `/tournaments/<tslug>/decks/<dslug>.json` — ces packs existent déjà
    (2 059 dans `dist/`), il n'y a rien à générer. Le tournoi de chaque liste est connu :
    `Site.leaders()` renvoie des paires `(Tournament, Deck)`.
 2. **L'import en bloc y est RELÉGUÉ**, pas supprimé : le pack complet reste un inventaire
