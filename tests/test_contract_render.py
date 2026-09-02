@@ -151,7 +151,14 @@ def test_cartes_triees_par_quantite_decroissante(built):
     """P4 — l'ordre source empêchait de comparer deux listes du même archétype."""
     out, _ = built
     page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
-    bloc = page[page.find("OP15-058"):]
+    # Sur le TEXTE rendu, pas sur le HTML brut : ce test porte sur l'ORDRE des cartes, et
+    # ne doit rien imposer au balisage. Sa version précédente regexait la source, donc
+    # exigeait que le chiffre et le « x » soient collés — ce qui interdisait le
+    # `<span class="qty">` exigé par ailleurs. Deux de mes tests se contredisaient, et le
+    # worker a résolu le conflit en déplaçant la classe sur le total du deck : les deux
+    # tests passaient, la puce de carte avait perdu sa distinction.
+    texte = re.sub(r"<[^>]+>", "", page)
+    bloc = texte[texte.find("OP15-058"):]
     ordre = [(int(q), cid) for q, cid in re.findall(r"(\d+)x\s*(OP\d\d-\d\d\d)", bloc)][:4]
     # Fixture Enel : 4xOP15-061, 4xOP15-067, 3xOP12-071, 2xOP10-067
     assert ordre == sorted(ordre, key=lambda t: (-t[0], t[1])), \
@@ -294,9 +301,16 @@ def test_puce_de_carte_distingue_quantite_et_id(built):
     """Un 4-of doit se lire comme la colonne vertébrale du deck, et une quantité
     inhabituelle (cartes sans limite, jouées à 8 ou 9) doit sauter aux yeux."""
     out, _ = built
-    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
-    assert re.search(r"""<[^>]*class=["'][^"']*(qty|quantite|qte)[^"']*["'][^>]*>\s*\d+""",
-                     page), "la quantité doit être un élément distinct de l'identifiant"
+    for rel in ("tournois/2026-07-04-regional-bielefeld/index.html",
+                "leaders/op15-058/index.html"):
+        page = _html(out, rel)
+        # La quantité d'une CARTE, pas le total du deck : on exige le motif suivi d'un
+        # identifiant de carte. Sans cette ancre, la classe posée sur « 50/50 cartes »
+        # satisfaisait le test alors que les puces n'étaient pas traitées.
+        assert re.search(
+            r"""<[^>]*class=["'][^"']*(?:qty|quantite|qte)[^"']*["'][^>]*>\s*\d+\s*"""
+            r"""</[^>]+>\s*x?\s*[A-Z]{2,4}\d\d-\d\d\d""", page), \
+            f"la quantité d'une carte doit être un élément distinct de son id, dans {rel}"
 
 
 def test_attribution_sans_libelle_duplique(built):

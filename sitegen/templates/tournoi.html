@@ -31,18 +31,22 @@
           </span>
           {% if d.player %}<span class="d-player">{{ d.player }}</span>{% endif %}
           <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
-            — {{ d.total_cards }}/{{ deck_size }} cartes</span>
+            — <span class="qty">{{ d.total_cards }}</span>/{{ deck_size }} cartes</span>
         </summary>
 
         {% if d.parsed %}
         <div class="deck-body">
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
-            <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+            <li><code>{{ qty }}x {{ card_id }}</code></li>
             {% endfor %}
           </ul>
+          <details class="decklist-native" open>
+            <summary>Decklist native — copier-coller vers le simulateur</summary>
+            <pre class="decklist"><code>{{ d.text }}</code></pre>
+          </details>
           <details class="deck-import-single">
-            <summary>Importer ce deck seul</summary>
+            <summary>Importer ce deck seul via studio</summary>
             <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ tournament.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
           </details>
         </div>
@@ -51,9 +55,13 @@
           <p class="d-raw">Nom non structuré : <code>{{ d.raw_name }}</code></p>
           <ul class="card-list">
             {% for card_id, qty in d.cards | sort_cards %}
-            <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
+            <li><code>{{ qty }}x {{ card_id }}</code></li>
             {% endfor %}
           </ul>
+          <details class="decklist-native" open>
+            <summary>Decklist native — copier-coller vers le simulateur</summary>
+            <pre class="decklist"><code>{{ d.text }}</code></pre>
+          </details>
         </div>
         {% endif %}
       </details>

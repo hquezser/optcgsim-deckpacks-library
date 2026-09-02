@@ -2,12 +2,14 @@
 {% block title %}{{ archetype_label }} — OPTCGSim deckpacks{% endblock %}
 {% block content %}
 
-{% include "_import.html" %}
-
 <section class="page-head">
   <h1>{{ archetype_label }}</h1>
   <p class="page-meta">{{ pairs | length }} {{ pairs | length | fr_plur("liste") }} — tous tournois confondus,
     {{ sections | length }} {{ sections | length | fr_plur("format") }}.</p>
+  <p class="page-help">Chaque liste porte sa propre commande d'import et sa decklist native
+    copiable d'un geste. L'inventaire complet tous formats confondus est proposé en bas de
+    page — c'est un inventaire, pas l'action utile : un archétype se joue en
+    {{ pairs | length }} {{ pairs | length | fr_plur("variante") }} à quelques cartes près.</p>
 </section>
 
 {% for section in sections %}
@@ -77,6 +79,10 @@
               {% endfor %}
             </ul>
             {% endif %}
+            <details class="deck-import-single">
+              <summary>Importer ce deck seul via studio</summary>
+              <pre class="import-cmd"><code>{{ import_command(base_url, '/tournois/' ~ t.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
+            </details>
           </div>
         </details>
       </li>
@@ -89,5 +95,14 @@
   </section>
 </section>
 {% endfor %}
+
+<section class="import-block import-relegue">
+  <h2 class="import-title">Inventaire complet — tous formats confondus</h2>
+  <p class="import-help">À n'utiliser que si vous voulez vraiment l'intégralité : ce pack
+    contient {{ pairs | length }} {{ pairs | length | fr_plur("liste") }} tous formats
+    confondus, soit des decks joués dans des environnements différents. Préférez
+    l'import par deck ci-dessus, ou l'import par format de chaque section.</p>
+  <pre class="import-cmd"><code>{{ import_command(base_url, pack_url) }}</code></pre>
+</section>
 
 {% endblock %}
