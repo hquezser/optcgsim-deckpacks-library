@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify.sh · Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Le générateur n'annonce pas de plancher via un pyproject : on couvre les versions
+        # raisonnablement présentes sur les machines de développement.
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: optcgsim-deckpacks-library
+
+      # Les liens inter-projets sont des chemins relatifs ENTRE VOISINS (cf. le README de
+      # l'écosystème) : la CI doit donc reconstituer la fraternité des dossiers, sinon
+      # check_dist.py ne trouve ni le validateur de la spec ni le studio.
+      #
+      # `optcgsim-deckpacks-data` n'est volontairement PAS cloné : il n'a pas de remote, et
+      # le corpus n'est pas nécessaire pour vérifier le GÉNÉRATEUR. On construit sur les
+      # fixtures du dépôt, qui sont hermétiques.
+      - uses: actions/checkout@v4
+        with:
+          repository: hquezser/optcgsim-deckpacks
+          path: optcgsim-deckpacks
+
+      - uses: actions/checkout@v4
+        with:
+          repository: hquezser/optcgsim-studio
+          path: optcgsim-studio
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Installer les dépendances
+        working-directory: optcgsim-deckpacks-library
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      # verify.sh est le critère de « terminé » du site : pytest, build, validation des
+      # packs produits contre la spec, carte des URLs, absence de sous-ressource externe,
+      # absence de contenu sous copyright, cohérence format/pool, et reproductibilité du
+      # build. Sur fixtures, le seul contrôle non applicable est l'importabilité réelle,
+      # qui porte sur la donnée publiée — il s'annonce comme tel plutôt que de mentir vert.
+      - name: verify.sh (corpus de fixtures)
+        working-directory: optcgsim-deckpacks-library
+        env:
+          PACKS_DIR: tests/fixtures/packs
+          DIST: .ci-dist
+          PY: python
+        run: ./orchestration/verify.sh
+
+# Pas de job « corpus réel » ici, volontairement : `optcgsim-deckpacks-data` n'a pas de
+# remote, donc un tel job ne pourrait rien vérifier. Un job rouge en permanence est un
+# signal qui n'apprend rien et qu'on finit par ignorer — et cette CI existe justement pour
+# éviter les verts (ou les rouges) qui ne veulent rien dire.
+#
+# À ajouter le jour où le corpus est publié : c'est le prérequis d'un déploiement
+# automatique du site, qui sans corpus atteignable n'aurait rien à publier.

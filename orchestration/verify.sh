@@ -14,8 +14,13 @@ cd "$(dirname "$0")/.." || exit 2
 PACKS_DIR="${PACKS_DIR:-../optcgsim-deckpacks-data/packs}"
 DIST="${DIST:-dist}"
 BASE_URL="${BASE_URL:-https://exemple.org}"
-PY="${PY:-python3}"
-[ -x .venv/bin/python ] && PY=.venv/bin/python
+# Le venv local est pratique en développement, mais un `PY` fourni explicitement doit
+# gagner : sinon la variable est mensongère, et un appelant qui croit choisir l'interpréteur
+# se fait silencieusement ignorer.
+if [ -z "${PY:-}" ]; then
+  PY=python3
+  [ -x .venv/bin/python ] && PY=.venv/bin/python
+fi
 
 fail=0
 step() { printf '\n──── %s\n' "$1"; }

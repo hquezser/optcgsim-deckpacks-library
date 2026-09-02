@@ -30,6 +30,12 @@ _MOTIFS_INTERDITS = ("<script", "@import", "cdn.", "fonts.google", "googletagman
 # pendant les contrôles, affichés en fin de rapport.
 _AVERTISSEMENTS: list[str] = []
 
+# Vrai quand le build vient des fixtures du dépôt et non d'un vrai corpus scrapé. Les
+# contrôles qui portent sur la DONNÉE publiée (et non sur le générateur) s'en abstiennent :
+# c'est ce qui permet de faire tourner tout ce script en CI, où le dépôt de données n'est
+# pas disponible.
+_sur_fixtures = False
+
 
 def expected_paths(site) -> set[str]:
     """L'ensemble EXACT attendu dans dist/, dérivé du corpus (cf. spec § carte des URLs)."""
@@ -200,6 +206,13 @@ def check_studio_resolves(dist: Path) -> list[str]:
     à `optcgsim-deckpacks-data`, mais il doit être VISIBLE à chaque build plutôt que
     découvert par un utilisateur.
     """
+    # Ce contrôle porte sur la DONNÉE publiée, pas sur le générateur. Les fixtures ont des
+    # decks volontairement minuscules (13 cartes au lieu de 50) pour rester vérifiables à la
+    # main : le studio les refuse à juste titre, et l'exiger sur elles n'apprendrait rien
+    # tout en interdisant de faire tourner ce script en CI sans le corpus réel.
+    if _sur_fixtures:
+        return []
+
     cli_root = ROOT.parent / "optcgsim-studio"
     if not (cli_root / "studio" / "cli.py").is_file():
         return [f"studio introuvable : {cli_root} — importabilité réelle non vérifiée"]
@@ -247,6 +260,15 @@ def main(argv: list[str]) -> int:
         print(f"✗ dist introuvable : {dist}")
         return 1
 
+    # Un corpus pris dans `tests/` est une fixture, jamais de la donnée publiable. Déduit
+    # plutôt que passé en drapeau : un drapeau qui désactive un contrôle finit par le
+    # désactiver là où il servait.
+    global _sur_fixtures
+    _sur_fixtures = (ROOT / "tests") in packs_dir.resolve().parents
+    if _sur_fixtures:
+        print(f"Corpus de FIXTURES ({packs_dir}) — les contrôles portant sur la donnée "
+              f"publiée sont annoncés comme non applicables.\n")
+
     from sitegen import parse
     site = parse.load_site(packs_dir)
 
@@ -259,9 +281,15 @@ def main(argv: list[str]) -> int:
         ("importabilité réelle par le studio", check_studio_resolves(dist)),
     ]
 
+    # Un contrôle non exécuté ne doit pas s'afficher « ✓ » : c'est le travers même que ce
+    # script traque ailleurs. On le marque « — » (non applicable) plutôt que vert.
+    non_applicables = {"importabilité réelle par le studio"} if _sur_fixtures else set()
+
     ko = 0
     for label, errs in etapes:
-        if errs:
+        if label in non_applicables:
+            print(f"— {label} : non applicable sur fixtures (porte sur la donnée publiée)")
+        elif errs:
             ko += 1
             print(f"✗ {label} — {len(errs)} problème(s)")
             for e in errs[:25]:
