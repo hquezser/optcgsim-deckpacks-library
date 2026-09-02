@@ -256,6 +256,40 @@ Lis la section « Quelle action, selon la page » de `SPEC-site-v1.md`, qui fait
    Attention : le texte natif ne doit pas subir le tri d'affichage par quantité. C'est ce
    qu'on colle dans le simulateur, il reste **verbatim**.
 
+## Le site passe en ANGLAIS (tests rouges)
+
+Décision du 2026-09-03 : **le site est en anglais**, `lang="en"`. Ce n'est pas du
+bilinguisme — il n'y a qu'une langue, et c'est l'anglais.
+
+Pourquoi : tout le CONTENU l'est déjà (identifiants de cartes, noms de joueurs, noms de
+tournois « OP16 26th July 2026 - Treasure Cup Sofia ») et la commande d'import aussi. Seule
+l'interface était en français, alors que le public est celui du Discord OPTCGSim, de
+Limitless et de ChinoizeCupStats.
+
+**La documentation interne du projet reste en FRANÇAIS** : cette spec, `AGENTS.md`, les
+commentaires de code, les messages d'erreur de `verify.sh`. Ne traduis que ce que le
+visiteur voit. Deux publics différents.
+
+### Vocabulaire — employer les termes du TCG anglophone
+
+Lis le tableau « Vocabulaire » de `SPEC-site-v1.md`, qui fait foi. L'essentiel :
+
+| Aujourd'hui | Devient | Ne pas écrire |
+|---|---|---|
+| Cœur commun | **core** | « common core », « base » |
+| N cartes d'écart | **N flex** | « delta », « difference », « gap » |
+| Decklist native | **decklist** | « native », « raw » |
+| Tournois / Méta courant / Formats à venir | Tournaments / Current meta / Upcoming formats | — |
+| N joueurs jouent cette liste | N players run this list | — |
+
+`flex` est le terme réel du TCG : les emplacements qu'un joueur choisit librement une fois
+le core posé. C'est exactement ce que la vue par écart montre — d'où le choix, plutôt qu'une
+traduction littérale de « écart ».
+
+Attention aux **accords** : le filtre de pluriel existant est français (`fr_plur`). En
+anglais la règle est différente et bien plus simple ; ne laisse pas de « 1 tournaments » ni
+de « card(s) ».
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).

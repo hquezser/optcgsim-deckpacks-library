@@ -44,6 +44,39 @@ Un deck isolé se prend de deux manières, et les deux comptent :
    et c'est ce qui ouvre le site à quiconque joue, pas seulement à qui a outillé sa machine.
    C'est donc un chemin de premier plan, pas un repli.
 
+## Langue du site : anglais
+
+**Le site est en anglais**, `lang="en"`. Décidé le 2026-09-03, et ça remplace la ligne
+« hors portée v1 : i18n » ci-dessous : il ne s'agit pas de bilinguisme mais d'une seule
+langue, la bonne.
+
+Le raisonnement : **tout le contenu est déjà anglais ou neutre** — identifiants de cartes,
+noms de joueurs, noms de tournois (« OP16 26th July 2026 - Treasure Cup Sofia »), et la
+commande d'import elle-même. Seule l'interface était en français. Or le public est celui du
+Discord OPTCGSim, de Limitless et de ChinoizeCupStats, qui est anglophone. Une version
+française servirait une personne, qui connaît déjà le projet.
+
+**La documentation interne reste en français** : cette spec, `AGENTS.md`, les specs de lots,
+les messages de commit et la sortie de `verify.sh`. Deux publics différents — les lecteurs du
+site et ceux qui travaillent dessus.
+
+### Vocabulaire
+
+Employer les termes du TCG anglophone, pas des traductions littérales :
+
+| Notion | Terme | À éviter |
+|---|---|---|
+| Cartes communes à ≥ 80 % des listes | **core** | « common core », « base » |
+| Cartes qui distinguent une liste du core | **flex** | « delta », « difference », « gap » |
+| Une decklist au format du simulateur | **decklist** | « native decklist », « raw » |
+| Nombre d'exemplaires d'une carte | `4x` | ne jamais l'appeler « quantity » en toutes lettres |
+| Environnement de jeu | **format** | « meta » quand il s'agit du format |
+| Le méta courant, comme instantané | **meta** | — |
+| Résultat en tournoi | **placement**, `1st` | « rank », « position » |
+
+`flex` est le terme réel : ce sont les emplacements qu'un joueur choisit librement, une fois
+le core posé. C'est exactement ce que la vue par écart montre.
+
 ## Portée v1
 
 Générateur statique. **Zéro** JS, auth, base de données, cookie, analytics, publicité,

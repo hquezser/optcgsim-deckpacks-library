@@ -215,6 +215,36 @@ def test_site_utilisable_en_file_url(built):
     assert cible.is_file(), f"feuille de style introuvable depuis la page : {href}"
 
 
+def test_page_en_anglais(built):
+    """Le site est en anglais : tout son CONTENU l'est déjà (ids de cartes, joueurs,
+    tournois), et son public est celui du Discord OPTCGSim et de Limitless.
+
+    La documentation interne du projet, elle, reste en français — deux publics différents.
+    """
+    out, paths = built
+    for p in [q for q in paths if q.suffix == ".html"]:
+        page = p.read_text(encoding="utf-8")
+        assert 'lang="en"' in page, f"{p.name} n'est pas déclaré en anglais"
+        # Quelques mots français fréquents qui trahiraient une traduction oubliée.
+        for mot in ("Tournois", "Importer", "Cœur", "cartes", "listes", "joueurs",
+                    "Formats à venir", "Méta courant"):
+            assert mot not in page, f"« {mot} » subsiste dans {p.name}"
+
+
+def test_vocabulaire_tcg_anglais(built):
+    """Employer les termes du TCG anglophone, pas des traductions littérales.
+
+    « core » pour les cartes communes, « flex » pour celles qui distinguent une liste —
+    ce sont les emplacements qu'un joueur choisit librement une fois le core posé.
+    """
+    out, _ = built
+    page = _html(out, "leaders/op01-000/index.html")
+    assert re.search(r"\bcore\b", page, re.IGNORECASE), "« core » attendu"
+    assert re.search(r"\bflex\b", page, re.IGNORECASE), "« flex » attendu"
+    for banni in ("delta", "difference", "gap", "common core"):
+        assert banni.lower() not in page.lower(), f"« {banni} » : préférer core/flex"
+
+
 def test_theme_sombre_par_defaut(built):
     """Registre « outil de joueur » : le fond est sombre SANS attendre une préférence.
 
@@ -356,7 +386,7 @@ def test_page_leader_montre_lecart(built):
     quasi identiques à lire l'une après l'autre."""
     out, _ = built
     page = _html(out, "leaders/op01-000/index.html")
-    assert "cœur" in page.lower() or "coeur" in page.lower(), \
+    assert "core" in page.lower(), \
         "le cœur commun doit être nommé et affiché une seule fois"
     assert re.search(r"\d+\s*carte", page), "la taille de l'écart doit être indiquée"
     # Les cartes hors cœur restent visibles ; celles du cœur ne sont pas répétées 5 fois.
@@ -551,9 +581,9 @@ def test_accord_singulier_et_pluriel(tmp_path):
     un = Tournament("2026-07-04-un", "OP16 Un", date(2026, 7, 4), "", "", (d,), format="OP16")
     page = next(p for p in render.write_pages(Site(tournaments=(un,)), tmp_path, base_url=BASE)
                 if p.name == "index.html").read_text()
-    assert "1 tournoi " in page or "1 tournoi<" in page or "1 tournoi\n" in page
-    assert "1 tournois" not in page
-    assert "1 listes" not in page
+    assert "1 tournament " in page or "1 tournament<" in page or "1 tournament\n" in page
+    assert "1 tournaments" not in page
+    assert "1 lists" not in page
 
 
 def test_nombre_d_ecart_annonce_une_seule_fois(tmp_path):
@@ -564,10 +594,11 @@ def test_nombre_d_ecart_annonce_une_seule_fois(tmp_path):
     paths = render.write_pages(_site_avec_ecarts(), tmp_path, base_url=BASE)
     page = next(p for p in paths
                 if p.as_posix().endswith("leaders/op01-000/index.html")).read_text()
-    assert "carte(s) d'écart" not in page
-    # 5 listes, donc 5 mentions d'écart — pas 10.
-    assert len(re.findall(r"d'écart", page)) == 5, \
-        f"{len(re.findall(r'écart', page))} mentions d'écart pour 5 listes"
+    # Le compte de flex figurait dans le résumé ET en titre juste dessous.
+    assert "card(s) flex" not in page
+    # 5 listes, donc 5 mentions de flex — pas 10.
+    mentions = len(re.findall(r"\bflex\b", page, re.IGNORECASE))
+    assert mentions == 5, f"{mentions} mentions de « flex » pour 5 listes"
 
 
 def test_page_leader_offre_l_import_par_deck(built):
@@ -605,10 +636,10 @@ def test_deck_copiable_au_format_natif(built):
     page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
     css = _html(out, "style.css").replace(" ", "").replace("\n", "")
     # La decklist native, verbatim, dans un bloc dédié et sélectionnable d'un geste.
-    assert re.search(r"""class=["'][^"']*(natif|native|decklist)[^"']*["']""", page), \
+    assert re.search(r"""class=["'][^"']*(decklist)[^"']*["']""", page), \
         "aucun bloc de decklist au format natif"
     bloc = re.search(
-        r"""<[^>]*class=["'][^"']*(?:natif|native|decklist)[^"']*["'][^>]*>(.{0,400})""",
+        r"""<[^>]*class=["'][^"']*(?:decklist)[^"']*["'][^>]*>(.{0,400})""",
         page, re.DOTALL)
     assert bloc and re.search(r"1x\s*OP\d\d-\d\d\d", bloc.group(1)), \
         "le bloc natif doit contenir la decklist, leader compris"
