@@ -28,7 +28,7 @@
         <span class="core-hint">(présent dans ≥ 80 % des listes)</span></summary>
       <ul class="card-list">
         {% for card_id, qty in section.core_items %}
-        <li><code>{{ qty }}x {{ card_id }}</code></li>
+        <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
         {% endfor %}
       </ul>
     </details>
@@ -42,7 +42,7 @@
       <li class="deck" id="{{ section.fslug }}-{{ d.slug }}">
         <details class="deck-details"{% if loop.first %} open{% endif %}>
           <summary class="deck-summary">
-            <span class="d-place">{{ d.placement | ordinal }}</span>
+            <span class="d-place place">{{ d.placement | ordinal }}</span>
             <span class="d-player">{{ d.player }}</span>
             <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
               — {{ d.total_cards }}/{{ deck_size }} cartes</span>
@@ -58,7 +58,7 @@
             <ul class="card-list">
               {% for card_id, qty_deck, qty_core in delta %}
               <li class="{% if qty_core == 0 %}d-add{% else %}d-adjust{% endif %}">
-                <code>{{ qty_deck }}x {{ card_id }}</code>
+                <code><span class="qty">{{ qty_deck }}</span>x {{ card_id }}</code>
                 {% if qty_core > 0 %}<span class="d-core-qty">(cœur {{ qty_core }}x)</span>{% endif %}
               </li>
               {% endfor %}
@@ -69,7 +69,7 @@
             {% else %}
             <ul class="card-list">
               {% for card_id, qty in d.cards | sort_cards %}
-              <li><code>{{ qty }}x {{ card_id }}</code></li>
+              <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
               {% endfor %}
             </ul>
             {% endif %}

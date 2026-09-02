@@ -138,6 +138,21 @@ def _domain_label(url: str) -> str:
     return parts[-2].capitalize() if len(parts) >= 2 else domain
 
 
+def _url_role(url: str) -> str | None:
+    """Sous-libellé de rôle dérivé du chemin, pour distinguer deux URL d'un même domaine.
+
+    Deux URL de limitlesstcg donnaient « Limitless · Limitless » — un libellé dupliqué qui
+    ressemble à un bug. On distingue par le rôle : le listing global vs. la fiche tournoi.
+    """
+    m = re.match(r"https?://[^/]+(/.*)?", url, re.IGNORECASE)
+    path = (m.group(1) or "").lower()
+    if "/tournament" in path:
+        return "tournoi"
+    if "/deck" in path or "/list" in path:
+        return "listes"
+    return None
+
+
 def urls_only(text: str) -> Markup:
     """N'extrait que les URL de `text`, rendues en une ligne d'attribution compacte.
 
@@ -145,7 +160,9 @@ def urls_only(text: str) -> Markup:
     et expose des paramètres internes (`region=Europe`, `time=3months`). Seules les URL
     qu'il contient sont citées (cf. SPEC § « Contenu des pages » — l'attribution reste
     obligatoire, l'étaler ne l'est pas). URL dédupliquées en conservant l'ordre d'apparition.
-    Le libellé du lien est le nom du site (dérivé du domaine), pas l'URL brute.
+    Le libellé du lien est le nom du site (dérivé du domaine), pas l'URL brute. Quand un
+    même domaine apparaît plusieurs fois, on distingue les libellés par leur rôle (listing
+    vs. tournoi) pour éviter « Limitless · Limitless ».
     """
     if not text:
         return Markup("")
@@ -158,11 +175,22 @@ def urls_only(text: str) -> Markup:
         if url and url not in seen:
             seen.add(url)
             unique.append(url)
-    links = [
-        f'<a href="{escape(u)}" rel="noreferrer nofollow" '
-        f'target="_blank">{escape(_domain_label(u))}</a>'
-        for u in unique
-    ]
+    # Compte les domaines pour savoir s'il faut disambiguïser.
+    label_counts: dict[str, int] = {}
+    for u in unique:
+        label_counts[_domain_label(u)] = label_counts.get(_domain_label(u), 0) + 1
+    links = []
+    for u in unique:
+        base = _domain_label(u)
+        if label_counts[base] > 1:
+            role = _url_role(u)
+            label = f"{base} · {role}" if role else base
+        else:
+            label = base
+        links.append(
+            f'<a href="{escape(u)}" rel="noreferrer nofollow" '
+            f'target="_blank">{escape(label)}</a>'
+        )
     return Markup(" · ".join(links))
 
 
@@ -259,6 +287,22 @@ def write_pages(site: Site, out: Path, base_url: str) -> list[Path]:
     # --- style.css ----------------------------------------------------------
     style_tpl = env.get_template("style.css")
     written.append(_write(out, "style.css", style_tpl.render(**ctx_common)))
+
+    # --- favicon.svg --------------------------------------------------------
+    # Icône de site écrite à la main, servie depuis le même domaine. Seule exception
+    # à « aucun asset » (cf. SPEC § « Icône de site ») : l'invariant vise les assets de
+    # CARTES sous copyright, pas une icône de projet. Aucune référence externe dedans
+    # (pas même xmlns, qui contient "http" — le test l'interdit, et le navigateur infère
+    # le namespace depuis le type MIME image/svg+xml).
+    favicon = (
+        '<svg viewBox="0 0 32 32">\n'
+        '  <rect width="32" height="32" rx="6" fill="#0d1117"/>\n'
+        '  <path d="M7 22 L13 16 L7 10" stroke="#58a6ff" stroke-width="2.5" '
+        'fill="none" stroke-linecap="round" stroke-linejoin="round"/>\n'
+        '  <rect x="16" y="20" width="2.5" height="4" fill="#58a6ff"/>\n'
+        '</svg>\n'
+    )
+    written.append(_write(out, "favicon.svg", favicon))
 
     # --- index.html (profondeur 0) -----------------------------------------
     leaders = site.leaders()  # dict trié par aslug (tous formats confondus)

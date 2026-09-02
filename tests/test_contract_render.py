@@ -258,7 +258,19 @@ def test_favicon_maison_et_meme_origine(built):
     assert svg.is_file(), "favicon.svg manquant"
     contenu = svg.read_text(encoding="utf-8")
     assert contenu.lstrip().startswith("<svg"), "le favicon doit être un SVG écrit à la main"
-    assert "http" not in contenu, "aucune référence externe dans le favicon"
+
+    # `xmlns` est OBLIGATOIRE pour un SVG autonome servi en image/svg+xml : sans lui le
+    # navigateur refuse de le rendre, silencieusement. Vérifié : naturalWidth valait 0.
+    assert 'xmlns="http://www.w3.org/2000/svg"' in contenu, \
+        "un SVG autonome sans xmlns ne se rend pas du tout"
+
+    # Aucune RÉFÉRENCE externe — à distinguer de l'URI de namespace ci-dessus, qui est un
+    # identifiant que le navigateur ne récupère jamais. La première version de ce test
+    # interdisait la chaîne « http » tout court, ce qui interdisait mécaniquement le xmlns
+    # requis : un test trop strict a produit un artefact cassé.
+    for attr in ("href", "src", "xlink:href"):
+        assert f"{attr}=" not in contenu, f"référence externe ({attr}) dans le favicon"
+    assert "url(" not in contenu, "référence externe (url()) dans le favicon"
     for rel in ("index.html", "meta/index.html", "leaders/op15-058/index.html"):
         page = _html(out, rel)
         m = re.search(r"""<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*>""", page)

@@ -21,7 +21,7 @@
       <li class="deck" id="meta-{{ aslug }}-{{ d.slug }}">
         <details class="deck-details"{% if loop.first %} open{% endif %}>
           <summary class="deck-summary">
-            <span class="d-place">{{ d.placement | ordinal }}</span>
+            <span class="d-place place">{{ d.placement | ordinal }}</span>
             <span class="d-player">{{ d.player }}</span>
             <span class="d-leader-id">leader <code>{{ d.leader_id }}</code></span>
           </summary>
@@ -32,7 +32,7 @@
           <div class="deck-body">
             <ul class="card-list">
               {% for card_id, qty in d.cards | sort_cards %}
-              <li><code>{{ qty }}x {{ card_id }}</code></li>
+              <li><code><span class="qty">{{ qty }}</span>x {{ card_id }}</code></li>
               {% endfor %}
             </ul>
           </div>
