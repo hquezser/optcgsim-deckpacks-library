@@ -10,8 +10,39 @@ Le site n'est **pas** une bibliothèque de decklists — Limitless fait déjà �
 **la rampe d'accès entre le méta compétitif et OPTCGSim**. La seule chose qu'on offre et
 que personne d'autre n'offre, c'est une commande d'import en un clic.
 
-Conséquence de design, non négociable : **la commande d'import est l'élément visuel
-principal de chaque page**, copiable en un clic. Tout le reste est secondaire.
+Conséquence de design, non négociable : **l'action d'import est l'élément visuel principal
+de chaque page**, copiable en un clic. Tout le reste est secondaire.
+
+### Quelle action, selon la page
+
+L'import EN BLOC n'a de sens que si le pack est **varié**. Mesuré sur le corpus :
+
+| Pack | Contenu réel |
+|---|---|
+| un tournoi | 16 decks → **6 archétypes distincts** |
+| le méta | 40 listes, plusieurs archétypes |
+| un leader (OP16) | 72 listes → **36 variantes** à ≤ 2 cartes, un seul archétype |
+| un format | 507 listes, majoritairement des variantes |
+
+Importer 72 listes Enel remplit le simulateur de decks à deux cartes d'écart : la *page* est
+utile pour comparer, l'import en bloc de cette page ne l'est pas.
+
+- **`/tournois/`** et **`/meta/`** : l'import en bloc est le héros. Le pack est varié, et
+  l'importer sert un vrai besoin (s'entraîner contre le méta).
+- **`/leaders/`** et **`/formats/`** : le héros est l'action **par deck**. Le pack complet
+  reste offert — c'est un inventaire légitime, et son URL est publique — mais **relégué**,
+  et accompagné du nombre de variantes réelles pour que le lecteur sache ce qu'il importe.
+
+### Deux façons de prendre un deck seul
+
+Un deck isolé se prend de deux manières, et les deux comptent :
+
+1. **`studio decks import-pack <url>`** vers `/tournois/<tslug>/decks/<dslug>.json`, comme
+   ailleurs sur le site.
+2. **Copier/coller la decklist au format natif** du simulateur (`Deck.text` verbatim,
+   `1xOP15-058` par ligne). **Ça ne demande AUCUNE installation** — ni studio, ni terminal —
+   et c'est ce qui ouvre le site à quiconque joue, pas seulement à qui a outillé sa machine.
+   C'est donc un chemin de premier plan, pas un repli.
 
 ## Portée v1
 

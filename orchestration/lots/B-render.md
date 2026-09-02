@@ -227,6 +227,35 @@ Ne pas confondre avec la déduplication, qui est déjà faite dans le modèle et
 cas inverse (même joueur rejouant sa liste). Lis la section « Redondance et convergence » de
 `SPEC-site-v1.md`.
 
+## Prendre UN deck, et l'import en bloc remis à sa place (tests rouges)
+
+Mesuré sur le corpus : un tournoi donne 16 decks pour **6 archétypes distincts** — de la
+variété, dont l'import en bloc sert un vrai besoin. Une page de leader donne 72 listes pour
+**36 variantes réelles** à ≤ 2 cartes, toutes du même archétype : les importer en bloc remplit
+le simulateur de decks à deux cartes d'écart. La *page* est utile pour comparer, son import
+en bloc non.
+
+Lis la section « Quelle action, selon la page » de `SPEC-site-v1.md`, qui fait foi.
+
+1. **Sur `/leaders/` et `/formats/`, l'action par deck devient le héros.** Chaque liste porte
+   sa propre commande, vers `/tournois/<tslug>/decks/<dslug>.json` — ces packs existent déjà
+   (2 059 dans `dist/`), il n'y a rien à générer. Le tournoi de chaque liste est connu :
+   `Site.leaders()` renvoie des paires `(Tournament, Deck)`.
+2. **L'import en bloc y est RELÉGUÉ**, pas supprimé : le pack complet reste un inventaire
+   légitime et son URL est publique. Il doit passer APRÈS les actions par deck, et annoncer
+   ce qu'il contient réellement.
+3. **Chaque deck offre sa decklist au format NATIF**, copiable d'un geste : `Deck.text`
+   verbatim (`1xOP15-058` par ligne, leader compris), dans un bloc de classe contenant
+   `natif`, `native` ou `decklist`, avec `user-select: all`.
+
+   **C'est le point le plus important de ce lot** : le copier/coller natif ne demande AUCUNE
+   installation — ni studio, ni terminal. Il ouvre le site à quiconque joue, et non
+   seulement à qui a outillé sa machine. Traite-le comme un chemin de premier plan, pas
+   comme un repli.
+
+   Attention : le texte natif ne doit pas subir le tri d'affichage par quantité. C'est ce
+   qu'on colle dans le simulateur, il reste **verbatim**.
+
 Contraintes de rendu :
 
 - Jinja2, avec `autoescape=True` (un nom de joueur peut contenir `<`, `&`).

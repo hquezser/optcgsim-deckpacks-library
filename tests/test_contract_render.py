@@ -556,6 +556,51 @@ def test_nombre_d_ecart_annonce_une_seule_fois(tmp_path):
         f"{len(re.findall(r'écart', page))} mentions d'écart pour 5 listes"
 
 
+def test_page_leader_offre_l_import_par_deck(built):
+    """Sur une page de leader, l'action utile est « prendre CELLE-CI », pas tout importer.
+
+    72 listes Enel en OP16 ne font que 36 variantes réelles à ≤ 2 cartes : les importer en
+    bloc remplit le simulateur de decks à deux cartes d'écart.
+    """
+    out, _ = built
+    page = _html(out, "leaders/op15-058/index.html")
+    # Chaque liste porte une commande d'import qui lui est propre, vers le pack d'un deck.
+    assert re.search(
+        rf"studio decks import-pack {re.escape(BASE)}/tournois/[^/]+/decks/[^\s\"'<]+\.json",
+        page), "aucune commande d'import par deck sur la page de leader"
+
+
+def test_page_leader_relegue_l_import_en_bloc(built):
+    """Le pack complet reste offert — c'est un inventaire — mais il ne doit plus être le
+    premier élément de la page, et doit dire ce qu'il contient réellement."""
+    out, _ = built
+    page = _html(out, "leaders/op15-058/index.html")
+    i_bloc = page.find(f"{BASE}/leaders/op15-058/deckpack.json")
+    i_deck = page.find(f"{BASE}/tournois/")
+    assert i_deck > 0, "aucune action par deck trouvée"
+    assert i_bloc < 0 or i_deck < i_bloc, \
+        "l'import par deck doit précéder l'import en bloc sur une page de leader"
+
+
+def test_deck_copiable_au_format_natif(built):
+    """Le copier/coller natif ne demande AUCUNE installation — ni studio, ni terminal.
+
+    C'est ce qui ouvre le site à quiconque joue, donc un chemin de premier plan.
+    """
+    out, _ = built
+    page = _html(out, "tournois/2026-07-04-regional-bielefeld/index.html")
+    css = _html(out, "style.css").replace(" ", "").replace("\n", "")
+    # La decklist native, verbatim, dans un bloc dédié et sélectionnable d'un geste.
+    assert re.search(r"""class=["'][^"']*(natif|native|decklist)[^"']*["']""", page), \
+        "aucun bloc de decklist au format natif"
+    bloc = re.search(
+        r"""<[^>]*class=["'][^"']*(?:natif|native|decklist)[^"']*["'][^>]*>(.{0,400})""",
+        page, re.DOTALL)
+    assert bloc and re.search(r"1x\s*OP\d\d-\d\d\d", bloc.group(1)), \
+        "le bloc natif doit contenir la decklist, leader compris"
+    assert "user-select:all" in css
+
+
 def test_page_leader_annonce_la_convergence(built):
     """Plusieurs joueurs sur la même liste au caractère près : c'est le signal le plus fort
     qu'une liste est résolue, et l'annoncer vaut mieux que d'aligner des entrées identiques.
