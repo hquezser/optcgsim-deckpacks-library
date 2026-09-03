@@ -140,6 +140,53 @@ Employer les termes du TCG anglophone, pas des traductions littérales :
 `flex` est le terme réel : ce sont les emplacements qu'un joueur choisit librement, une fois
 le core posé. C'est exactement ce que la vue par écart montre.
 
+## Refonte « Console » — ce que le zéro-JS impose
+
+Les maquettes validées (canevas de design, 2026-09-03) reposent sur un panneau gauche
+persistant et un panneau droit qui change à la sélection. **Un clic ne peut pas changer le
+panneau droit sans JavaScript**, et le site s'interdit tout script — spec, portillon (motif
+`<script`) et surtout la page légale, qui garantit publiquement « runs no JavaScript ».
+
+La sélection devient donc **une page par choix**, ce que ce site fait déjà. Ce n'est pas un
+repli : l'URL redevient partageable, et chaque page reste légère (mesuré : 14 Ko transférés
+pour une page leader de 277 Ko brut — les identifiants de cartes se répètent, gzip écrase
+20:1). Le rail gauche est un **partiel partagé**, pas un modèle d'interaction nouveau.
+
+Conséquence sur la carte des URLs : une page de leader porte **un seul format**, celui de son
+URL, au lieu d'empiler toutes ses sections de format.
+
+```
+/leaders/<aslug>/index.html          l'archétype dans le FORMAT COURANT + rail du champ
+/leaders/<aslug>/<fslug>/index.html  le même, dans un autre format
+```
+
+`/leaders/<aslug>/deckpack.json` (toutes formats confondus) ne bouge pas : c'est l'inventaire.
+La vue « tous formats empilés » disparaît — deux vues de la même chose finissent par diverger,
+et celle-ci pesait 273 Ko pour six sections que personne ne lit d'affilée.
+
+## Lectures comparatives : une valeur et son rang, jamais une étiquette à seuil
+
+Les maquettes portaient deux étiquettes — « warped by one deck » sur un tournoi, « Solved /
+Still being figured out / No consensus » sur un archétype. **Les deux sont refusées**, pour
+la raison qui a déjà fait tomber trois seuils sur ce projet : les distributions n'ont pas de
+creux où poser une frontière.
+
+| Mesure | Distribution réelle | Verdict |
+|---|---|---|
+| Part du 1er archétype d'un tournoi | 134 tournois de 10 % à 62 %, médiane 25 %, aucun creux | pas de seuil |
+| Taille du core d'un archétype | 70 couples archétype×format de 24 à 51 cartes, médiane 43, unimodal | pas de seuil |
+
+À la place, le site **affiche la valeur et la situe** : « top deck 62 % — médiane du corpus
+25 % », « core de 50 cartes sur 51 ». Le lecteur juge, on ne juge pas pour lui. C'est aussi
+plus informatif qu'une étiquette, et ça ne demande aucun réglage à maintenir.
+
+**Garde-fou de petit effectif** : le core est calculé sur un seuil de présence (≥ 80 %) qui
+ne veut rien dire sur peu de listes — mesuré, `Marshall.D.Teach / OP14` affiche un core de
+**51 cartes sur 6 listes**, c'est-à-dire « les 51 cartes sont dans au moins 5 des 6 listes »,
+ce qui n'établit aucun consensus. `MIN_LISTS_FOR_DIFF = 4` est trop bas pour cet usage : une
+lecture comparative n'est affichée qu'au-delà d'un effectif à fixer par la mesure, et en
+dessous la page dit l'effectif plutôt qu'une conclusion.
+
 ## Obligations légales (le site est en ligne)
 
 Le site est publié : les obligations s'appliquent, même sans monétisation et même avec zéro
