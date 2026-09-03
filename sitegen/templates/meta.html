@@ -18,11 +18,14 @@
     field roughly as it is — not the last few events.</p>
   <ol class="field-list">
     {% for aslug, label, n in meta_field %}
-    <li class="field-row">
+    {# `--share` est porté par la LIGNE, car c'est son `::before` qui peint la part. Il a
+       d'abord été laissé sur un `<span>` enfant après le déplacement de la barre : `var()`
+       ne remonte pas, la largeur devenait invalide, et TOUTES les barres tombaient sur leur
+       `min-width` de 2 px — exactement l'apparence du défaut qu'on corrigeait. #}
+    <li class="field-row" style="--share: {{ (100 * n / meta_window_total) | round | int }}">
       <a href="{{ rel }}leaders/{{ aslug }}/">{{ label }}</a>
       <span class="field-n">{{ n }}</span>
       <span class="field-share">{{ (100 * n / meta_window_total) | round | int }}%</span>
-      <span class="field-bar" style="--share: {{ (100 * n / meta_window_total) | round | int }}"></span>
     </li>
     {% endfor %}
   </ol>

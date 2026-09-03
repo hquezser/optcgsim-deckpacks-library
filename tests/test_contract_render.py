@@ -1203,3 +1203,35 @@ def test_plur_refuse_ce_qui_n_est_pas_un_nombre():
     for mauvais in ([1], (1, 2), "1", None, True):
         with pytest.raises(TypeError):
             render.plur(mauvais, "list")
+
+
+def test_une_variable_css_inline_est_portee_par_l_element_qui_l_utilise(built):
+    """`var()` ne remonte pas des enfants vers le parent.
+
+    Défaut réel : la barre de part a été déplacée sur `.field-row::before` sans déplacer le
+    `style="--share: N"`, resté sur un `<span>` enfant. La largeur devenait invalide et
+    TOUTES les barres tombaient sur leur `min-width` de 2 px — soit exactement l'apparence
+    du défaut qu'on corrigeait, ce qui rendait la panne invisible à la relecture.
+
+    Le contrôle : pour chaque variable posée en style inline, la feuille doit contenir une
+    règle qui l'utilise ET qui vise la classe de l'élément porteur.
+    """
+    out, paths = built
+    css = _html(out, "style.css")
+    verifiees = 0
+    for p in paths:
+        if p.suffix != ".html":
+            continue
+        texte = p.read_text(encoding="utf-8")
+        for classes, var in re.findall(
+                r'<\w+[^>]*class="([^"]*)"[^>]*style="\s*(--[\w-]+)\s*:', texte):
+            verifiees += 1
+            regles = [b for sel, b in re.findall(r"([^{}]+)\{([^}]*)\}", css)
+                      if f"var({var}" in b]
+            assert regles, f"{p.relative_to(out)} : {var} posé mais utilisé nulle part"
+            selecteurs = " ".join(sel for sel, b in re.findall(r"([^{}]+)\{([^}]*)\}", css)
+                                  if f"var({var}" in b)
+            assert any(f".{c}" in selecteurs for c in classes.split()), (
+                f"{p.relative_to(out)} : {var} est posé sur « {classes} » mais la règle qui "
+                f"l'utilise vise « {selecteurs.strip()} » — var() ne remonte pas")
+    assert verifiees, "aucune variable inline trouvée, le motif de détection a dû changer"
