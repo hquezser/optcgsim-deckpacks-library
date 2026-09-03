@@ -24,6 +24,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
+from . import variants
 from .archetype import CORE_THRESHOLD, MIN_LISTS_FOR_DIFF, core_cards, deck_delta
 from .model import Deck, Site, Tournament
 
@@ -57,7 +58,14 @@ DECK_SIZE = 50
 # la page devient illisible en mobile (un archétype du corpus réel atteint 234 listes,
 # soit > 0,5 Mo). Le cœur commun et le `deckpack.json` portent toujours sur l'intégralité
 # — c'est un plafond de présentation, pas de données (cf. SPEC § « Contenu des pages »).
-LEADER_LISTS_CAP = 24
+# Plafond d'affichage, exprimé en GROUPES de listes quasi-identiques et non en listes.
+#
+# Le plafond existait parce qu'un archétype atteint 234 listes, soit une page d'un demi-Mo
+# illisible en mobile. Mais tronquer JETTE de l'information : les listes au-delà du rang 24
+# n'apparaissaient nulle part. Le regroupement compresse au lieu de tronquer — 20 % des
+# listes du corpus sont absorbées dans un groupe existant — et un groupe ne coûte qu'une
+# decklist affichée, quel que soit le nombre de joueurs qui la partagent.
+LEADER_GROUPS_CAP = 24
 
 
 def meta_pairs(site: Site) -> tuple[tuple[Tournament, Deck], ...]:
@@ -543,13 +551,16 @@ def write_pages(site: Site, out: Path, base_url: str,
                 (t, d, deck_delta(d, f_core) if f_show_diff else ())
                 for t, d in f_pairs
             )
-            # Plafond d'affichage : on ne garde que les `LEADER_LISTS_CAP` plus récentes.
-            # Le cœur commun (f_core) reste calculé sur `f_pairs` tout entier, et le
-            # `deckpack.json` produit par le lot C contient l'intégralité — c'est un
-            # plafond de présentation, pas de données.
+            # Regroupement des listes à un échange près (cf. sitegen/variants.py). Le cœur
+            # commun reste calculé sur `f_pairs` tout entier, et le `deckpack.json` contient
+            # l'intégralité : le regroupement est une présentation, pas un filtre.
             total_lists = len(f_deck_rows)
-            display_rows = f_deck_rows[:LEADER_LISTS_CAP]
-            omitted = max(0, total_lists - LEADER_LISTS_CAP)
+            groupes = variants.group_lists(f_deck_rows)
+            display_groups = groupes[:LEADER_GROUPS_CAP]
+            # Ce qui reste hors page se compte en LISTES, parce que c'est ce que le lecteur
+            # perd — annoncer « 3 groupes omis » ne lui dirait pas combien de listes.
+            omitted = sum(g.size for g in groupes[LEADER_GROUPS_CAP:])
+            display_rows = tuple(g.rep for g in display_groups)
             # Convergence : joueurs DIFFÉRENTS jouant la même liste au caractère près.
             # On l'annonce plutôt que d'aligner des entrées identiques — c'est le signal
             # le plus fort qu'une liste est résolue (cf. SPEC § « Redondance et
@@ -562,6 +573,9 @@ def write_pages(site: Site, out: Path, base_url: str,
                 "pairs": f_pairs,
                 "total_lists": total_lists,
                 "display_rows": display_rows,
+                "groups": display_groups,
+                "n_groups": len(groupes),
+                "max_swaps": variants.MAX_SWAPS,
                 "omitted": omitted,
                 "core": f_core,
                 "core_items": f_core_items,

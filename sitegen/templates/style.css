@@ -213,3 +213,33 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .legal ul { padding-left: 1.1rem; }
 .legal li { margin-bottom: 0.5rem; }
 .footer-fine { font-size: 0.82rem; opacity: 0.75; }
+
+/* Groupes de listes quasi-identiques. Un groupe doit se distinguer d'une liste isolée d'un
+   coup d'œil, sans crier : une simple barre à gauche suffit. */
+.groups-rule { font-size: 0.85rem; opacity: 0.7; margin: 0.2rem 0 0.8rem; max-width: 46rem; }
+.deck-group { border-left: 2px solid var(--accent, #6ee7d7); padding-left: 0.6rem; }
+.d-group-tag {
+  font-size: 0.78rem; padding: 0.05rem 0.4rem; border-radius: 3px;
+  background: color-mix(in srgb, var(--accent, #6ee7d7) 18%, transparent);
+  /* Pas d'interdiction de retour à la ligne ici. Un test de contrat la bannit de TOUTE la
+     feuille pour protéger la commande d'import du défilement horizontal — 65 % de la
+     commande était cachée en mobile. L'interdiction est plus large que son motif, et elle
+     porte même sur les commentaires (le test dépouille les espaces avant de chercher) ;
+     mais une puce de deux mots qui revient à la ligne ne coûte rien, et on n'affaiblit pas
+     un garde-fou pour de la cosmétique. */
+}
+.group-members > summary { cursor: pointer; font-size: 0.88rem; opacity: 0.85; }
+.member-list { list-style: none; padding-left: 0; margin: 0.4rem 0 0; }
+.member {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
+  padding: 0.25rem 0; border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  font-size: 0.9rem;
+}
+.m-player { font-weight: 600; }
+.m-swap { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; }
+/* L'entrant et le sortant doivent se lire sans compter les signes. */
+.m-in  { color: var(--in, #64d8a3); }
+.m-out { color: var(--out, #e0888a); }
+.m-same { opacity: 0.6; font-style: italic; }
+.m-tournament { font-size: 0.85rem; opacity: 0.8; }
+.m-import { font-size: 0.78rem; opacity: 0.75; word-break: break-all; user-select: all; }

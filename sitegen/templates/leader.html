@@ -38,17 +38,34 @@
   {% endif %}
 
   <section class="decks">
-    <h3>{{ section.total_lists }} {{ section.total_lists | plur("list") }} — most recent first</h3>
+    <h3>{{ section.total_lists }} {{ section.total_lists | plur("list") }} —
+      {{ section.n_groups }} distinct {{ section.n_groups | plur("build") }}</h3>
+    <p class="groups-rule">Lists within one swap of each other are shown together. Every
+      list in a group is one swap or less from <em>every</em> other in it, not merely from
+      its neighbour.</p>
     <ol class="deck-list">
-      {% for t, d, delta in section.display_rows %}
+      {% for group in section.groups %}
+      {% set t, d, delta = group.rep %}
       {% set conv_players = section.converging.get(d.signature) %}
-      <li class="deck" id="{{ section.fslug }}-{{ d.slug }}">
+      <li class="deck{% if group.size > 1 %} deck-group{% endif %}"
+          id="{{ section.fslug }}-{{ d.slug }}">
         <details class="deck-details"{% if loop.first %} open{% endif %}>
           <summary class="deck-summary">
             <span class="d-place place">{{ d.placement | ordinal }}</span>
             <span class="d-player">{{ d.player }}</span>
             <span class="d-leader-id">leader <code>{{ d.leader_id }}</code>
               — {{ d.total_cards }}/{{ deck_size }} cards</span>
+            {# Un groupe de listes IDENTIQUES est déjà annoncé par la mention de
+               convergence (« N players run this list »), qui est la bonne formulation : ce
+               qui compte n'est pas que les listes coïncident, c'est que des joueurs
+               DIFFÉRENTS y soient arrivés. On ne le dit donc qu'une fois. La puce reprend la
+               main quand il n'y a pas de mention — un même joueur, ou un groupe qui n'est
+               pas identique. #}
+            {% if group.size > 1 and not (group.identical and conv_players) %}
+            <span class="d-group-tag">{% if group.identical %}{{ group.size }} identical
+              {{ group.size | plur("list") }}{% else %}+{{ group.others | length }} within one
+              swap{% endif %}</span>
+            {% endif %}
             {% if section.show_diff %}<span class="d-var-tag">{{ delta | length }} flex</span>{% endif %}
           </summary>
           {% if conv_players %}
@@ -86,6 +103,32 @@
               <summary>Import this deck alone via studio</summary>
               <pre class="import-cmd"><code>{{ import_command(base_url, '/tournaments/' ~ t.slug ~ '/decks/' ~ d.slug ~ '.json') }}</code></pre>
             </details>
+            {% if group.others %}
+            <details class="group-members">
+              <summary>{{ group.others | length }} more
+                {{ group.others | plur("list") }} in this group</summary>
+              <ul class="member-list">
+                {% for mt, md, mdelta, n, detail in group.others %}
+                <li class="member">
+                  <span class="m-place place">{{ md.placement | ordinal }}</span>
+                  <span class="m-player">{{ md.player }}</span>
+                  {% if detail %}
+                  <span class="m-swap">
+                    {%- for card_id, n_card in detail %}
+                    <code class="{% if n_card > 0 %}m-in{% else %}m-out{% endif %}"><span
+                      class="qty">{{ n_card if n_card < 0 else "+" ~ n_card }}</span>x {{ card_id | card_ref }}</code>
+                    {%- endfor %}
+                  </span>
+                  {% else %}
+                  <span class="m-swap m-same">same list</span>
+                  {% endif %}
+                  <a class="m-tournament" href="{{ rel }}tournaments/{{ mt.slug }}/">{{ mt.name }}</a>
+                  <code class="m-import">{{ import_command(base_url, '/tournaments/' ~ mt.slug ~ '/decks/' ~ md.slug ~ '.json') }}</code>
+                </li>
+                {% endfor %}
+              </ul>
+            </details>
+            {% endif %}
           </div>
         </details>
       </li>

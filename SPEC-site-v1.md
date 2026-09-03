@@ -385,6 +385,46 @@ directement doit savoir s'il regarde le méta courant ou un méta à venir.
   compacte (`rel="noreferrer nofollow"`, `target="_blank"`) — créditer la source reste
   obligatoire, l'étaler ne l'est pas.
 
+### Regroupement des listes quasi-identiques
+
+Troisième catégorie, distincte des deux ci-dessous : des listes **différentes**, séparées
+d'un seul échange. Sur le corpus, 75 % des 106 listes `Purple Enel` OP16 sont à un échange
+près d'une autre. La page les alignait, puis tronquait le surplus — à la fois répétitive et
+incomplète.
+
+**L'unité est l'échange, pas un seuil réglé.** Deux decks légaux ont 50 cartes : la distance
+en cartes est donc toujours paire, et sa moitié est le nombre d'échanges (retirer un
+exemplaire, en ajouter un autre). `MAX_SWAPS = 1` est la plus petite modification qu'un
+joueur puisse faire. Cette propriété était nécessaire, parce que **les données n'offrent
+aucun seuil naturel** : la distribution des distances par paires est unimodale et lisse, avec
+un pic autour de 8 à 10 cartes d'écart, sans aucun creux où poser une frontière.
+
+**Liaison complète, jamais chaînage.** Une liste ne rejoint un groupe que si elle est à
+≤ 1 échange de **toutes** ses membres, donc le diamètre du groupe est borné par
+construction — et la promesse faite au lecteur est vraie de n'importe quelle paire qu'il
+compare. Le chaînage (A~B et B~C ⇒ A,B,C) a été essayé et réfuté : il réunissait 58 des 106
+listes `Purple Enel` OP16 dans une grappe de **5 échanges de diamètre**.
+
+Le partitionnement glouton n'est pas canonique — un autre ordre donnerait d'autres groupes,
+tous valides. L'ordre est donc fixé : **meilleur placement d'abord**, ce qui rend la sortie
+déterministe et donne à chaque groupe le meilleur résultat pour représentant.
+
+**Un groupe doit dire QUEL échange le distingue.** Annoncer « un échange » sans nommer les
+cartes ferait disparaître de la page celles qui n'appartiennent qu'à un membre : c'est de
+l'information perdue, pas de la compression. Chaque membre affiche donc son écart carte par
+carte, l'entrant et le sortant distingués visuellement.
+
+**Le plafond d'affichage se compte en groupes** (`LEADER_GROUPS_CAP = 24`), plus en listes.
+Le poids d'une page est porté par les decklists affichées, pas par les noms de joueurs :
+30 listes identiques ne coûtent qu'une decklist. Ce qui reste hors page se compte en
+**listes**, parce que c'est ce que le lecteur perd. Mesuré en changeant de règle : +7 % de
+poids sur les pages `/leaders/`, +1 % sur le site entier, et **270 listes qui étaient
+purement et simplement jetées redeviennent visibles**.
+
+Quand un groupe est identique, c'est la mention de convergence qui l'annonce (« N players run
+this list ») et non la puce de groupe : ce qui compte n'est pas que les listes coïncident,
+c'est que des joueurs **différents** y soient arrivés. On ne le dit qu'une fois.
+
 ### Redondance et convergence
 
 Les coupes en ligne sont **quotidiennes**, et un joueur assidu y rejoue sa liste jour après

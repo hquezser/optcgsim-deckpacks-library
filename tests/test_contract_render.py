@@ -531,12 +531,19 @@ def test_page_leader_import_par_format(built):
     assert f"studio decks import-pack {BASE}/leaders/op01-000/op15.json" in page
 
 
-def test_plafond_de_listes_par_section(tmp_path):
-    """Au plus 24 listes affichées par format ; le cœur et le pack portent sur toutes.
+def test_plafond_par_section_compte_les_groupes_pas_les_listes(tmp_path):
+    """Au plus 24 GROUPES affichés par format — et plus aucune liste jetée quand elle tient
+    dans un groupe affiché.
 
-    Sur le corpus réel un archétype atteint 234 listes — une page de plus d'un demi-Mo,
-    illisible en mobile. Construit ici en mémoire plutôt qu'en fixture : 30 decks de fichiers
-    alourdiraient tous les autres tests pour un seul comportement.
+    Ce test épinglait avant « au plus 24 noms de joueurs », un proxy du vrai invariant : une
+    page d'un demi-Mo est illisible en mobile. Le proxy interdisait la bonne solution. Avec
+    le regroupement, 30 listes identiques ne coûtent QU'UNE decklist affichée — le poids est
+    porté par les decklists, pas par les noms — et les 30 joueurs restent nommés au lieu
+    d'être tronqués.
+
+    Mesuré sur le corpus réel en changeant de règle : +7 % de poids sur les pages /leaders/,
+    +1 % sur le site entier, et 270 listes qui étaient purement et simplement jetées
+    redeviennent visibles.
     """
     from datetime import date
 
@@ -555,11 +562,67 @@ def test_plafond_de_listes_par_section(tmp_path):
     page = next(p for p in paths
                 if p.as_posix().endswith("leaders/op15-058/index.html")).read_text()
 
-    affichees = len(re.findall(r"J\d\d", page))
-    assert affichees <= 24, f"{affichees} listes affichées, plafond 24"
+    # Les 30 listes sont identiques : un seul groupe, donc une seule decklist affichée.
+    assert page.count('class="deck-details"') <= render.LEADER_GROUPS_CAP, \
+        "plus de decklists affichées que le plafond de groupes"
+    # Et surtout : aucun joueur n'est perdu, là où la troncature en jetait six.
+    for i in range(1, 31):
+        assert f"J{i:02d}" in page, f"J{i:02d} a disparu de la page"
     assert "30" in page, "le total réel doit rester annoncé"
-    assert re.search(r"(6|autre|omis|de plus)", page, re.IGNORECASE), \
-        "le nombre de listes non affichées doit être indiqué"
+
+
+def test_le_plafond_de_groupes_annonce_les_listes_perdues(tmp_path):
+    """Quand il y a vraiment trop de groupes, ce qui reste hors page se compte en LISTES.
+
+    Annoncer « 3 groupes omis » ne dirait pas au lecteur combien de listes il ne voit pas.
+    """
+    from datetime import date
+
+    from sitegen.model import Deck, Site, Tournament
+
+    # 30 listes deux à deux distinctes de plus d'un échange : 30 groupes, plafond 24.
+    decks = tuple(
+        Deck(raw_name=f"Purple Enel — K{i:02d} ({i})", archetype="Purple Enel",
+             player=f"K{i:02d}", placement=i, leader_id="OP15-058",
+             cards=(("OP15-061", 4), (f"OP16-{i:03d}", 4)),
+             text=f"1xOP15-058\n4xOP15-061\n4xOP16-{i:03d}")
+        for i in range(1, 31)
+    )
+    t = Tournament("2026-07-04-varie", "OP16 Tournoi Varié", date(2026, 7, 4), "", "",
+                   decks, format="OP16")
+    paths = render.write_pages(Site(tournaments=(t,)), tmp_path, base_url=BASE)
+    page = next(p for p in paths
+                if p.as_posix().endswith("leaders/op15-058/index.html")).read_text()
+
+    assert page.count('class="deck-details"') <= render.LEADER_GROUPS_CAP
+    assert re.search(r"6 more list", page), \
+        "les 6 listes hors page doivent être annoncées en listes, pas en groupes"
+
+
+def test_un_groupe_dit_QUEL_echange_le_distingue(tmp_path):
+    """Sans ça, le regroupement PERD de l'information : une carte présente seulement chez un
+    membre disparaîtrait de la page. Attrapé par test_page_leader_montre_lecart en réel.
+    """
+    from datetime import date
+
+    from sitegen.model import Deck, Site, Tournament
+
+    commun = tuple((f"OP01-{i:03d}", 4) for i in range(1, 13))
+    a = Deck(raw_name="A — Ana (1)", archetype="A", player="Ana", placement=1,
+             leader_id="OP15-058", cards=commun + (("OP02-111", 2),),
+             text="1xOP15-058\n" + "\n".join(f"{q}x{c}" for c, q in commun + (("OP02-111", 2),)))
+    b = Deck(raw_name="A — Bo (2)", archetype="A", player="Bo", placement=2,
+             leader_id="OP15-058", cards=commun + (("OP02-111", 1), ("OP02-222", 1)),
+             text="1xOP15-058\n" + "\n".join(
+                 f"{q}x{c}" for c, q in commun + (("OP02-111", 1), ("OP02-222", 1))))
+    t = Tournament("2026-07-04-x", "OP16 X", date(2026, 7, 4), "", "", (a, b), format="OP16")
+    paths = render.write_pages(Site(tournaments=(t,)), tmp_path, base_url=BASE)
+    page = next(p for p in paths
+                if p.as_posix().endswith("leaders/op15-058/index.html")).read_text()
+
+    assert "OP02-222" in page, \
+        "la carte propre au membre du groupe doit rester visible sur la page"
+    assert "swap" in page.lower(), "la règle de regroupement doit être annoncée au lecteur"
 
 
 def _site_avec_ecarts():
@@ -1013,3 +1076,19 @@ def test_la_date_de_mise_a_jour_legale_ne_suit_pas_le_corpus(built):
     assert render.LEGAL_UPDATED in page
     # Le fixture a un tournoi de juillet 2026 : la date légale ne doit pas s'y accrocher.
     assert "Last updated" in page
+
+
+def test_un_groupe_identique_ne_se_repete_pas(built):
+    """La convergence et le groupe identique disaient la même chose deux fois.
+
+    « 2 identical lists » et « 2 players run this list » sur la même ligne : la seconde est
+    la bonne formulation — ce qui compte n'est pas que les listes coïncident, c'est que des
+    joueurs DIFFÉRENTS y soient arrivés. On ne le dit qu'une fois.
+    """
+    out, _ = built
+    page = _html(out, "leaders/op15-058/index.html")
+    for bloc in re.findall(r'<summary class="deck-summary">.*?</summary>', page, re.S):
+        if "run this list" in bloc:
+            assert "identical" not in bloc, "la même information est annoncée deux fois"
+    # La mention de convergence, elle, doit rester : c'est le signal fort.
+    assert "run this list" in page
