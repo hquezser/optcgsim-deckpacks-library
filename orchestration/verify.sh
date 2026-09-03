@@ -47,7 +47,19 @@ empreinte_corpus() {
   find "$PACKS_DIR" -name deckpack.json -type f | LC_ALL=C sort | tr '\n' '\0' \
     | xargs -0 cksum 2>/dev/null
 }
-EMPREINTE_AVANT="$(empreinte_corpus | sort)"
+EMPREINTE_AVANT="$(empreinte_corpus | LC_ALL=C sort)"
+
+# Une empreinte VIDE se comparerait égale à elle-même : le contrôle deviendrait un no-op
+# silencieux, et c'est précisément ce que ce dépôt refuse — un contrôle doit distinguer
+# « rien n'a changé » de « je n'ai rien mesuré ». On échoue donc tout de suite si le corpus
+# existe et contient des manifestes sans qu'on ait su les empreindre.
+if [ -d "$PACKS_DIR" ] && [ -z "$EMPREINTE_AVANT" ] \
+   && [ -n "$(find "$PACKS_DIR" -name deckpack.json -type f -print -quit 2>/dev/null)" ]; then
+  echo "✗ impossible d'empreindre le corpus ($PACKS_DIR) alors qu'il contient des manifestes"
+  echo "  find/sort/cksum indisponibles ou incompatibles : le contrôle de stabilité du"
+  echo "  corpus serait aveugle, donc mensonger. Corriger l'environnement."
+  exit 2
+fi
 
 step "1/4  tests unitaires"
 if "$PY" -m pytest -q; then
