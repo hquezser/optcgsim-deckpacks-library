@@ -106,7 +106,7 @@
             {% if group.others %}
             <details class="group-members">
               <summary>{{ group.others | length }} more
-                {{ group.others | plur("list") }} in this group</summary>
+                {{ group.others | length | plur("list") }} in this group</summary>
               <ul class="member-list">
                 {% for mt, md, mdelta, n, detail in group.others %}
                 <li class="member">

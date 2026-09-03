@@ -220,7 +220,16 @@ def plur(n: int, singular: str) -> str:
     All nouns used on this site have a regular +s plural (tournament, list, deck,
     card, format, player, variant). A single filter rather than scattered `{% if %}`
     (cf. SPEC § « Accords et redites » : 1705 parenthesised plurals on the real corpus).
+
+    Le filtre EXIGE un nombre. Recevoir une séquence — `{{ liste | plur("list") }}` au lieu
+    de `{{ liste | length | plur("list") }}` — donnait « 1 more lists » en silence, parce
+    qu'une liste d'un élément n'est pas égale à 1. Un gabarit qui se trompe doit échouer au
+    build, pas produire une faute d'accord que personne ne relit.
     """
+    if isinstance(n, bool) or not isinstance(n, int):
+        raise TypeError(
+            f"plur() attend un nombre, reçu {type(n).__name__} — "
+            f"il manque probablement `| length` dans le gabarit")
     return singular if n == 1 else singular + "s"
 
 

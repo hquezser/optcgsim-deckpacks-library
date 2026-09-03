@@ -28,6 +28,31 @@ Résultat : accueil → un format → des leaders, et le tournoi devenu introuva
 pack aussi. **Un segment d'URL qui porte des pages filles doit avoir un index**, et la nav
 doit y mener depuis n'importe quelle page (vérifié page par page, comme pour `/legal/`).
 
+### Un titre décrit sa page, et un extrait mène à son index
+
+L'accueil s'intitulait « Recent tournaments » alors que sa première section est *Formats* et
+que la liste des tournois y vient en quatrième position — c'est ce qui a fait chercher un
+tournoi sur cette page pour tomber sur des archétypes. Le titre décrit désormais la page, et
+l'extrait des 20 tournois récents porte un lien explicite vers l'index complet : sans lui, le
+lecteur croit que l'extrait est tout ce qui existe.
+
+### `plur` exige un nombre, et échoue s'il n'en reçoit pas
+
+`{{ liste | plur("list") }}` au lieu de `{{ liste | length | plur("list") }}` produisait
+« 1 more lists » **en silence** — une séquence d'un élément n'est pas égale à 1. Le filtre
+lève désormais `TypeError` : un gabarit fautif doit casser le build, pas produire une faute
+d'accord que personne ne relit.
+
+### Les couleurs vivent dans la palette, pas dans les règles
+
+`--in` et `--out` (entrant/sortant d'un échange) ont d'abord été codés en dur dans les règles
+qui les utilisaient, donc hors du thème et invisibles pour qui relit `:root`. Toute couleur
+se déclare dans la palette.
+
+Même famille : une part de champ peinte dans une **colonne** de grille se réduisait à
+quelques pixels en 375 px — identiques pour 33 % et pour 1 %, donc muets. Elle est peinte en
+**fond de ligne**, lisible à n'importe quelle largeur.
+
 ### Copier : le geste s'annonce, il ne s'invente pas
 
 Les blocs noirs (commande d'import, decklist native) portent `user-select: all` : **un seul

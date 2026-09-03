@@ -1,9 +1,12 @@
 {% extends "_base.html" %}
-{% block title %}OPTCGSim deckpacks — recent tournaments{% endblock %}
+{% block title %}OPTCGSim deckpacks — decklists by format, tournament and archetype{% endblock %}
 {% block content %}
 
 <section class="intro">
-  <h1>Recent tournaments</h1>
+  {# Le titre annonçait « Recent tournaments » alors que la première section est Formats et
+     que la liste des tournois vient en quatrième. C'est ce qui a fait chercher un tournoi ici
+     pour tomber sur des leaders — l'index complet vit maintenant sur /tournaments/. #}
+  <h1>Decklists for OPTCGSim</h1>
   <p>A bridge between the competitive meta and OPTCGSim: each page exposes a
     <code>studio decks import-pack</code> command you can copy in one click and paste into
     <a href="https://github.com/hquezser/optcgsim-studio" rel="noreferrer nofollow"
@@ -44,7 +47,9 @@
 </section>
 
 <section class="tournaments">
-  <h2>{{ recent_tournaments | length }} {{ recent_tournaments | length | plur("tournament") }} — most recent first</h2>
+  <h2>Latest {{ recent_tournaments | length }}
+    {{ recent_tournaments | length | plur("tournament") }}
+    <a class="see-all" href="{{ rel }}tournaments/">see all {{ site.tournaments | length }}</a></h2>
   <ol class="tournament-list">
     {% for t in recent_tournaments %}
     <li>

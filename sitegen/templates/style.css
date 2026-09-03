@@ -15,6 +15,10 @@
   --add-bg: #1a3a2a;
   --adjust-bg: #3a2a1a;
   --xx: #6e7681;
+  /* Entrant / sortant d'un échange entre deux listes. Déclarés ici, comme le reste : la
+     première version les codait en dur dans les règles, donc hors du thème. */
+  --in: #56d364;
+  --out: #f0883e;
   background-color: #0d1117;
 }
 
@@ -217,10 +221,10 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 /* Groupes de listes quasi-identiques. Un groupe doit se distinguer d'une liste isolée d'un
    coup d'œil, sans crier : une simple barre à gauche suffit. */
 .groups-rule { font-size: 0.85rem; opacity: 0.7; margin: 0.2rem 0 0.8rem; max-width: 46rem; }
-.deck-group { border-left: 2px solid var(--accent, #6ee7d7); padding-left: 0.6rem; }
+.deck-group { border-left: 2px solid var(--accent); padding-left: 0.6rem; }
 .d-group-tag {
   font-size: 0.78rem; padding: 0.05rem 0.4rem; border-radius: 3px;
-  background: color-mix(in srgb, var(--accent, #6ee7d7) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   /* Pas d'interdiction de retour à la ligne ici. Un test de contrat la bannit de TOUTE la
      feuille pour protéger la commande d'import du défilement horizontal — 65 % de la
      commande était cachée en mobile. L'interdiction est plus large que son motif, et elle
@@ -238,8 +242,8 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .m-player { font-weight: 600; }
 .m-swap { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; }
 /* L'entrant et le sortant doivent se lire sans compter les signes. */
-.m-in  { color: var(--in, #64d8a3); }
-.m-out { color: var(--out, #e0888a); }
+.m-in  { color: var(--in); }
+.m-out { color: var(--out); }
 .m-same { opacity: 0.6; font-style: italic; }
 .m-tournament { font-size: 0.85rem; opacity: 0.8; }
 .m-import { font-size: 0.78rem; opacity: 0.75; word-break: break-all; user-select: all; }
@@ -248,18 +252,24 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
    d'une variable posée par le gabarit, donc aucun script. */
 .field-rule { font-size: 0.85rem; opacity: 0.7; max-width: 46rem; margin: 0.2rem 0 0.8rem; }
 .field-list { list-style: none; padding-left: 0; margin: 0; }
+/* La part est peinte en FOND DE LIGNE, pas dans une colonne dédiée.
+   Première version : une quatrième colonne pour la barre. En 375 px, le nom mangeait toute
+   la largeur et la barre se réduisait à quelques pixels identiques pour 33 % comme pour 1 % —
+   elle ne disait plus rien. En fond, la proportion reste lisible à n'importe quelle largeur,
+   et une colonne de moins libère la place du libellé. */
 .field-row {
-  display: grid; grid-template-columns: minmax(8rem, 14rem) 2.5rem 3rem 1fr;
-  gap: 0.5rem; align-items: center; padding: 0.2rem 0; font-size: 0.92rem;
+  position: relative;
+  display: grid; grid-template-columns: 1fr 2.5rem 3rem;
+  gap: 0.5rem; align-items: center; padding: 0.25rem 0.4rem; font-size: 0.92rem;
+  border-radius: 3px;
+}
+.field-row::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; z-index: -1;
+  width: calc(var(--share) * 1%); min-width: 2px; border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .field-n { text-align: right; font-variant-numeric: tabular-nums; opacity: 0.8; }
 .field-share { text-align: right; font-variant-numeric: tabular-nums; }
-.field-bar {
-  height: 0.55rem; border-radius: 3px;
-  background: color-mix(in srgb, var(--accent, #6ee7d7) 55%, transparent);
-  width: calc(var(--share) * 1%);
-  min-width: 2px;
-}
 
 /* Index des tournois. Une grille, pour que la date et le nombre de decks s'alignent d'une
    ligne à l'autre — c'est ce qui rend une liste de 134 entrées parcourable à l'œil. */
@@ -273,7 +283,7 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .ti-name { font-weight: 600; }
 .ti-date, .ti-n { font-variant-numeric: tabular-nums; opacity: 0.75; }
 .ti-circuit { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; }
-.ti-online { color: var(--accent, #6ee7d7); }
+.ti-online { color: var(--accent); }
 /* En dessous de ~640 px la grille à cinq colonnes se casse : on empile. */
 @media (max-width: 640px) {
   .ti-row { grid-template-columns: 1fr auto; }
@@ -287,6 +297,10 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .import-cmd, .decklist { cursor: cell; }
 .import-cmd:hover, .decklist:hover,
 .import-cmd:focus-within, .decklist:focus-within {
-  border-color: var(--accent, #6ee7d7);
+  border-color: var(--accent);
 }
 .select-hint { opacity: 0.65; font-weight: 400; }
+
+/* « voir tout » : un raccourci vers l'index complet depuis l'extrait de l'accueil. Discret,
+   mais présent — c'est le chaînon qui manquait quand la liste de l'accueil était la SEULE. */
+.see-all { font-size: 0.82rem; font-weight: 400; margin-left: 0.5rem; }

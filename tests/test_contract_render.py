@@ -1171,3 +1171,35 @@ def test_aucun_script_nulle_part(built):
         texte = p.read_text(encoding="utf-8").lower()
         for motif in ("<script", "javascript:", "onclick=", "onload=", "navigator.clipboard"):
             assert motif not in texte, f"{p.relative_to(out)} : {motif}"
+
+
+def test_l_extrait_de_l_accueil_mene_a_l_index_complet(built):
+    """L'accueil ne montre que les 20 tournois les plus récents. Sans lien vers l'index, le
+    lecteur croit que c'est tout ce qu'il y a — c'est exactement la confusion signalée.
+    """
+    out, _ = built
+    page = _html(out, "index.html")
+    assert re.search(r'class="see-all" href="tournaments/"', page), \
+        "l'extrait de l'accueil ne mène pas à l'index complet des tournois"
+
+
+def test_le_titre_de_l_accueil_ne_promet_pas_une_section_absente(built):
+    """Le `h1` annonçait « Recent tournaments » alors que la première section est Formats et
+    que les tournois arrivent en quatrième position. Un titre doit décrire sa page.
+    """
+    out, _ = built
+    page = _html(out, "index.html")
+    h1 = re.search(r"<h1>(.*?)</h1>", page, re.S).group(1).strip()
+    assert "recent tournaments" not in h1.lower(), \
+        f"le titre « {h1} » promet une liste de tournois qui n'ouvre pas la page"
+
+
+def test_plur_refuse_ce_qui_n_est_pas_un_nombre():
+    """« 1 more lists » venait d'un gabarit passant la LISTE au lieu de sa longueur, et le
+    filtre pluralisait en silence. Un gabarit fautif doit casser le build.
+    """
+    assert render.plur(1, "list") == "list"
+    assert render.plur(2, "list") == "lists"
+    for mauvais in ([1], (1, 2), "1", None, True):
+        with pytest.raises(TypeError):
+            render.plur(mauvais, "list")
