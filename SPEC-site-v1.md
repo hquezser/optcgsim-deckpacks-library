@@ -28,17 +28,28 @@ Résultat : accueil → un format → des leaders, et le tournoi devenu introuva
 pack aussi. **Un segment d'URL qui porte des pages filles doit avoir un index**, et la nav
 doit y mener depuis n'importe quelle page (vérifié page par page, comme pour `/legal/`).
 
-### Le pack se télécharge, il ne fait pas que s'importer
+### Copier : le geste s'annonce, il ne s'invente pas
 
-Deux usages distincts, et les deux comptent :
+Les blocs noirs (commande d'import, decklist native) portent `user-select: all` : **un seul
+clic sélectionne tout le contenu**. La capacité existait depuis le début — c'est l'affordance
+qui manquait. Rien dans la page ne l'annonçait, donc personne ne l'essayait, et l'utilisateur
+a demandé « un bouton copier ».
 
-1. la **commande** `studio decks import-pack <url>` importe *maintenant* ;
-2. le **fichier** `deckpack.json` se garde et se réimporte plus tard **tel quel**, même si le
-   tournoi a quitté la fenêtre du site ou si le corpus a changé depuis.
+Pas de bouton, et c'est un arbitrage assumé : la copie dans le presse-papiers exige
+`navigator.clipboard`, donc du JavaScript. Le site s'en interdit — la spec, le portillon (qui
+bannit le motif `<script`) et surtout la **page légale**, qui garantit publiquement
+« runs no JavaScript ». Rompre cette garantie pour économiser une frappe de touche serait un
+mauvais échange.
 
-Le second ne dépend de rien — ni du studio, ni d'un réseau au moment de l'import. Toute page
-portant un bloc d'import offre donc aussi son pack en téléchargement (`<a download>`), et un
-test de contrat le vérifie sur chacune.
+Le geste est donc écrit là où il se fait (« click it to select all, then ⌘C / Ctrl+C »),
+et rendu visible par le curseur en cellule de texte et un liseré au survol. Deux tests le
+verrouillent, dont un qui interdit `<script`, `onclick=` et `navigator.clipboard` dans toute
+la sortie.
+
+**Le pack ne se met pas en avant comme fichier.** Une proposition « télécharge-le et
+garde-le » a été essayée puis retirée : les URLs des packs restent publiques et documentées
+dans la carte des URLs, mais le site ne propose que la **commande d'import**. Une seule façon
+de faire, plutôt que deux qui se concurrencent.
 
 ### Quelle action, selon la page
 

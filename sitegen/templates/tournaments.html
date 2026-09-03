@@ -7,8 +7,8 @@
   <p class="page-meta">{{ total }} {{ total | plur("tournament") }} —
     {{ total_lists }} {{ total_lists | plur("list") }}, grouped by format,
     most recent first.</p>
-  <p class="intro-note">Each tournament has its own pack. Import it in one command, or
-    download the JSON and keep it — it re-imports later, as is.</p>
+  <p class="intro-note">Each tournament has its own pack, importable in one command from
+    its page.</p>
 </section>
 
 {% for fslug, label, tournaments in by_format %}
@@ -23,8 +23,6 @@
       <span class="ti-date">{{ t.date if t.date else "unknown date" }}</span>
       <span class="ti-circuit ti-{{ t.circuit }}">{{ t.circuit }}</span>
       <span class="ti-n">{{ t.decks | length }} {{ t.decks | length | plur("deck") }}</span>
-      <a class="ti-pack" href="{{ rel }}tournaments/{{ t.slug }}/deckpack.json"
-        download>pack</a>
     </li>
     {% endfor %}
   </ul>

@@ -1137,27 +1137,37 @@ def test_une_page_de_format_redescend_sur_ses_tournois(built):
         "aucun lien vers un tournoi sur la page d'un format"
 
 
-def test_chaque_pack_est_telechargeable_et_pas_seulement_importable(built):
-    """La commande importe MAINTENANT ; le fichier se garde et se réimporte plus tard.
+def test_le_geste_de_selection_est_annonce(built):
+    """`user-select: all` rendait déjà un clic suffisant pour tout sélectionner — mais rien
+    ne le disait, donc personne ne l'essayait. La capacité existait, l'affordance manquait.
 
-    Deux usages distincts, et le second ne dépend de rien — ni du studio, ni d'un réseau au
-    moment de l'import. C'est ce que l'utilisateur a signalé comme perdu.
+    Signalé en usage réel comme « il faut un bouton copier ». Un vrai bouton exigerait du
+    JavaScript, que le site s'interdit et dont sa page légale garantit publiquement
+    l'absence. Annoncer le geste coûte une phrase et tient la garantie.
+    """
+    out, _ = built
+    css = _html(out, "style.css").replace(" ", "").replace("\n", "")
+    assert "user-select:all" in css, "le clic ne sélectionne plus tout"
+    assert "cursor:cell" in css, "rien n'indique visuellement que le bloc est sélectionnable"
+
+    page = _html(out, "tournaments/2026-07-04-regional-bielefeld/index.html")
+    assert "click it to select all" in page, \
+        "la page ne dit pas comment copier la decklist"
+    # L'accueil ne porte pas de bloc d'import : on interroge une page qui en a un.
+    assert "Click the command to select all" in _html(out, "meta/index.html"), \
+        "la page ne dit pas comment copier la commande d'import"
+
+
+def test_aucun_script_nulle_part(built):
+    """L'invariant que le bouton copier aurait rompu, et que la page légale publie.
+
+    `check_dist` le vérifie déjà sur le build complet ; ici on le verrouille au niveau du
+    rendu, pour qu'une régression échoue au plus près de sa cause.
     """
     out, paths = built
-    vus = 0
     for p in paths:
-        if p.suffix != ".html":
+        if p.suffix not in {".html", ".css"}:
             continue
-        texte = p.read_text(encoding="utf-8")
-        if 'class="import-block"' not in texte:
-            continue
-        vus += 1
-        m = re.search(r'<a class="pack-download" href="([^"]+)"[^>]*download', texte)
-        assert m, f"{p.relative_to(out)} : pack non téléchargeable"
-        href = m.group(1)
-        assert href.endswith(".json"), f"{p.relative_to(out)} : {href} n'est pas un pack"
-        assert not href.startswith(("http://", "https://", "/")), \
-            f"{p.relative_to(out)} : {href} doit être relatif au document"
-        # Que le fichier existe est vérifié par check_dist sur le build COMPLET : ce lot-ci
-        # n'écrit pas les packs, et exiger leur présence ici testerait l'autre lot.
-    assert vus >= 4, "trop peu de pages testées, le motif de détection a dû changer"
+        texte = p.read_text(encoding="utf-8").lower()
+        for motif in ("<script", "javascript:", "onclick=", "onload=", "navigator.clipboard"):
+            assert motif not in texte, f"{p.relative_to(out)} : {motif}"

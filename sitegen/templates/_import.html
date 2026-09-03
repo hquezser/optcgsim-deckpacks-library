@@ -2,14 +2,8 @@
    `pack_url` is a path absolute from the site root (e.g. /tournaments/x/deckpack.json). #}
 <section class="import-block">
   <h2 class="import-title">Import into OPTCGSim</h2>
-  <p class="import-help">Copy the command below and paste it into
+  <p class="import-help">Click the command to select all of it, copy, and paste it into
     <a href="https://github.com/hquezser/optcgsim-studio" rel="noreferrer nofollow"
       target="_blank">optcgsim-studio</a>.</p>
   <pre class="import-cmd"><code>{{ import_command(base_url, pack_url) }}</code></pre>
-  {# Le fichier lui-même, en plus de la commande. Deux usages distincts : la commande
-     importe maintenant, le fichier se GARDE — on le réimporte plus tard tel quel, même si
-     le tournoi a quitté la fenêtre du site ou si le corpus a changé. C'est le seul chemin
-     qui ne dépend de rien : ni du studio, ni d'un réseau au moment de l'import. #}
-  <p class="import-file">Or <a class="pack-download" href="{{ rel }}{{ pack_url.lstrip('/') }}"
-    download>download the pack</a> and keep it — it re-imports later, as is.</p>
 </section>
