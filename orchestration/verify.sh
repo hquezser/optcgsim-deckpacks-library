@@ -25,6 +25,30 @@ fi
 fail=0
 step() { printf '\n──── %s\n' "$1"; }
 
+# Empreinte du corpus : somme de contrôle du CONTENU de chaque manifeste.
+#
+# Le corpus appartient à un AUTRE dépôt, que ce script ne verrouille pas. S'il change en
+# cours de route — un `git pull` dans deckpacks-data, un scraping qui se termine — les deux
+# builds de l'étape 4 lisent deux corpus différents, et le script accuse le générateur de
+# non-déterminisme. C'est arrivé le 2026-09-03 : deux rouges consécutifs pendant un rebase
+# du dépôt de données, puis cinq verts d'affilée sans qu'une ligne ait changé. Le diagnostic
+# a coûté plus cher que la panne.
+#
+# On ne verrouille pas (ce n'est pas notre dépôt) : on DÉTECTE, pour que le message dise la
+# vérité au lieu de désigner un innocent.
+#
+# `cksum` et non `stat` : `stat -f` est du BSD (macOS) et signifie « système de fichiers »
+# sur GNU/Linux, où le contrôle serait devenu un no-op silencieux en CI — le défaut que ce
+# dépôt traque partout ailleurs. `cksum` est POSIX et se comporte pareil des deux côtés.
+#
+# Le contenu, et pas la date de modification : un `touch` n'est pas un changement de corpus,
+# une réécriture par git en est un.
+empreinte_corpus() {
+  find "$PACKS_DIR" -name deckpack.json -type f | LC_ALL=C sort | tr '\n' '\0' \
+    | xargs -0 cksum 2>/dev/null
+}
+EMPREINTE_AVANT="$(empreinte_corpus | sort)"
+
 step "1/4  tests unitaires"
 if "$PY" -m pytest -q; then
   echo "✓ pytest"
@@ -69,6 +93,18 @@ if [ -d "$DIST" ]; then
     fail=1
   fi
   rm -rf .verify-dist2
+fi
+
+# Le corpus a-t-il bougé sous nos pieds ? À vérifier AVANT le verdict : si oui, ni le vert
+# ni le rouge ne veut dire ce qu'il prétend.
+if [ "$(empreinte_corpus | sort)" != "$EMPREINTE_AVANT" ]; then
+  printf '\n'
+  echo "✗ le corpus a CHANGÉ pendant l'exécution ($PACKS_DIR)"
+  echo "  Un autre processus l'a modifié — git pull dans le dépôt de données, scraping en"
+  echo "  cours. Aucun résultat ci-dessus n'est concluant, y compris un « deux builds"
+  echo "  identiques » : les deux builds n'ont pas lu le même corpus."
+  echo "  Relancer une fois le corpus stable."
+  fail=1
 fi
 
 printf '\n════ '
