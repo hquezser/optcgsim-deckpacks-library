@@ -1,0 +1,34 @@
+{% extends "_base.html" %}
+{% block title %}All tournaments — OPTCGSim deckpacks{% endblock %}
+{% block content %}
+
+<section class="page-head">
+  <h1>All tournaments</h1>
+  <p class="page-meta">{{ total }} {{ total | plur("tournament") }} —
+    {{ total_lists }} {{ total_lists | plur("list") }}, grouped by format,
+    most recent first.</p>
+  <p class="intro-note">Each tournament has its own pack. Import it in one command, or
+    download the JSON and keep it — it re-imports later, as is.</p>
+</section>
+
+{% for fslug, label, tournaments in by_format %}
+<section class="format-section">
+  <h2>{% if fslug %}<a href="{{ rel }}formats/{{ fslug }}/">{{ label }}</a>{% else %}{{ label }}{% endif %}
+    <span class="f-count">{{ tournaments | length }}
+      {{ tournaments | length | plur("tournament") }}</span></h2>
+  <ul class="tournament-index">
+    {% for t in tournaments %}
+    <li class="ti-row">
+      <a class="ti-name" href="{{ rel }}tournaments/{{ t.slug }}/">{{ t.name }}</a>
+      <span class="ti-date">{{ t.date if t.date else "unknown date" }}</span>
+      <span class="ti-circuit ti-{{ t.circuit }}">{{ t.circuit }}</span>
+      <span class="ti-n">{{ t.decks | length }} {{ t.decks | length | plur("deck") }}</span>
+      <a class="ti-pack" href="{{ rel }}tournaments/{{ t.slug }}/deckpack.json"
+        download>pack</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+
+{% endblock %}

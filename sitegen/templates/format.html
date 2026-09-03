@@ -10,6 +10,25 @@
   <p class="page-meta">{{ tournaments | length }} {{ tournaments | length | plur("tournament") }} — {{ total_lists }} {{ total_lists | plur("list") }}.</p>
 </section>
 
+<section class="format-tournaments">
+  <h2>{{ tournaments | length }} {{ tournaments | length | plur("tournament") }} —
+    most recent first</h2>
+  <p class="intro-note">Each has its own pack: import it in one command, or download the
+    JSON and keep it.</p>
+  <ul class="tournament-index">
+    {% for t in tournaments %}
+    <li class="ti-row">
+      <a class="ti-name" href="{{ rel }}tournaments/{{ t.slug }}/">{{ t.name }}</a>
+      <span class="ti-date">{{ t.date if t.date else "unknown date" }}</span>
+      <span class="ti-circuit ti-{{ t.circuit }}">{{ t.circuit }}</span>
+      <span class="ti-n">{{ t.decks | length }} {{ t.decks | length | plur("deck") }}</span>
+      <a class="ti-pack" href="{{ rel }}tournaments/{{ t.slug }}/deckpack.json"
+        download>pack</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
 <section class="archetypes">
   <h2>Archetypes — by list count, descending</h2>
   <ul class="archetype-list">

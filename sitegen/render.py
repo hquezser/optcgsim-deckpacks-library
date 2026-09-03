@@ -573,6 +573,34 @@ def write_pages(site: Site, out: Path, base_url: str,
         written.append(_write(out, f"leaders/{aslug}/index.html", page))
 
     # --- meta (profondeur 1) ------------------------------------------------
+    # --- index des tournois (profondeur 1) ---------------------------------
+    # Le segment /tournaments/ portait 134 pages filles et AUCUN index : y monter donnait un
+    # 404, et la nav « Tournaments » pointait sur l'accueil, où la liste des tournois est la
+    # quatrième section. Depuis une page de format on ne pouvait pas non plus redescendre sur
+    # un tournoi. L'accès direct à un tournoi — et donc à son pack, qu'on peut télécharger et
+    # réimporter tel quel — était devenu introuvable.
+    tournaments_tpl = env.get_template("tournaments.html")
+    par_format: dict[str, list[Tournament]] = {}
+    for t in site.sorted_tournaments:
+        par_format.setdefault(t.format_slug, []).append(t)
+    # Formats connus d'abord, dans l'ordre du modèle ; les tournois non classés en fin, sous
+    # un libellé explicite plutôt que dans un groupe vide de sens.
+    ordre = [f for f in _formats_recent_first(site) if f in par_format]
+    if "" in par_format:
+        ordre.append("")
+    by_format = [
+        (f, site.format_label(f) if f else "Unclassified format", tuple(par_format[f]))
+        for f in ordre
+    ]
+    written.append(_write(out, "tournaments/index.html", tournaments_tpl.render(
+        site=site,
+        by_format=by_format,
+        total=len(site.tournaments),
+        total_lists=sum(len(t.decks) for t in site.tournaments),
+        rel="../",
+        **ctx_common,
+    )))
+
     # --- mentions légales et vie privée (profondeur 1) ---------------------
     # Page obligatoire dès lors que le site est en ligne, et liée depuis CHAQUE page :
     # une mention légale qu'on ne peut atteindre que par une URL devinée n'informe personne.

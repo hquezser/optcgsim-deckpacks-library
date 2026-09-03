@@ -13,6 +13,33 @@ que personne d'autre n'offre, c'est une commande d'import en un clic.
 Conséquence de design, non négociable : **l'action d'import est l'élément visuel principal
 de chaque page**, copiable en un clic. Tout le reste est secondaire.
 
+### Atteindre un tournoi, et repartir avec son pack
+
+Signalé en usage réel, et c'était trois défauts qui se cumulaient sur le même chemin :
+
+- `/tournaments/` portait 134 pages filles et **aucun index** — remonter l'URL donnait un
+  404, et il n'existait aucune vue d'ensemble des tournois ;
+- la nav « Tournaments » pointait sur l'**accueil**, dont le titre annonce « Recent
+  tournaments » mais dont les deux premières sections sont Formats et Meta ;
+- une page `/formats/<fslug>/` ne listait **que des archétypes** : depuis un format, on ne
+  pouvait pas redescendre sur un tournoi.
+
+Résultat : accueil → un format → des leaders, et le tournoi devenu introuvable — donc son
+pack aussi. **Un segment d'URL qui porte des pages filles doit avoir un index**, et la nav
+doit y mener depuis n'importe quelle page (vérifié page par page, comme pour `/legal/`).
+
+### Le pack se télécharge, il ne fait pas que s'importer
+
+Deux usages distincts, et les deux comptent :
+
+1. la **commande** `studio decks import-pack <url>` importe *maintenant* ;
+2. le **fichier** `deckpack.json` se garde et se réimporte plus tard **tel quel**, même si le
+   tournoi a quitté la fenêtre du site ou si le corpus a changé depuis.
+
+Le second ne dépend de rien — ni du studio, ni d'un réseau au moment de l'import. Toute page
+portant un bloc d'import offre donc aussi son pack en téléchargement (`<a download>`), et un
+test de contrat le vérifie sur chacune.
+
 ### Quelle action, selon la page
 
 L'import EN BLOC n'a de sens que si le pack est **varié**. Mesuré sur le corpus :
@@ -258,6 +285,7 @@ Si `placement is None` : `f"xx-{slug(raw_name)}"`.
 
 ```
 /index.html                                    tournois récents + formats + index des leaders
+/tournaments/index.html                        TOUS les tournois, groupés par format
 /tournaments/<tslug>/index.html                   un tournoi : ses decks
 /tournaments/<tslug>/deckpack.json                le pack complet du tournoi
 /tournaments/<tslug>/decks/<dslug>.json           un deck seul, en pack d'un élément

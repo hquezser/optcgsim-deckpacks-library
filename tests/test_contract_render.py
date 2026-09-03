@@ -34,6 +34,7 @@ def test_emet_exactement_les_pages_du_contrat(built):
         "style.css",
         "favicon.svg",
         "legal/index.html",
+        "tournaments/index.html",
         "meta/index.html",
         "formats/op15/index.html",
         "formats/op16/index.html",
@@ -1092,3 +1093,71 @@ def test_un_groupe_identique_ne_se_repete_pas(built):
             assert "identical" not in bloc, "la même information est annoncée deux fois"
     # La mention de convergence, elle, doit rester : c'est le signal fort.
     assert "run this list" in page
+
+
+# ── Atteindre un tournoi ────────────────────────────────────────────────────────────────
+# Défaut signalé en usage réel : le segment /tournaments/ portait 134 pages filles et AUCUN
+# index (404 en y montant), la nav « Tournaments » pointait sur l'accueil où les tournois
+# sont la quatrième section, et une page de format ne listait que des archétypes. Depuis un
+# format, on ne pouvait plus redescendre sur un tournoi — donc plus accéder à son pack.
+
+def test_l_index_des_tournois_existe_et_est_complet(built):
+    """Un segment d'URL qui porte des pages filles doit avoir un index. Sans lui, remonter
+    l'URL donne un 404, et il n'existe aucune vue d'ensemble des tournois."""
+    out, _ = built
+    page = _html(out, "tournaments/index.html")
+    for slug in ("2026-07-04-regional-bielefeld", "2026-04-01-regional-ancien",
+                 "2026-04-15-treasure-cup-noyau", "2026-06-15-chinoizecup-avance"):
+        assert f"tournaments/{slug}/" in page, f"{slug} absent de l'index des tournois"
+    # Un tournoi de format indéterminé doit y figurer aussi, sous un libellé explicite
+    # plutôt que dans un groupe muet.
+    assert "Unclassified" in page or "chinoizecup-avance" in page
+
+
+def test_la_nav_mene_a_l_index_des_tournois(built):
+    """Depuis N'IMPORTE QUELLE page. Le lien pointait sur l'accueil : le titre disait
+    « Recent tournaments » mais les deux premières sections étaient Formats et Meta."""
+    out, paths = built
+    for p in paths:
+        if p.suffix != ".html":
+            continue
+        rel = p.relative_to(out)
+        prefixe = "../" * (len(rel.parts) - 1)
+        texte = p.read_text(encoding="utf-8")
+        assert f'href="{prefixe}tournaments/"' in texte, \
+            f"{rel} : la nav ne mène pas à l'index des tournois"
+        assert (out / rel.parent / f"{prefixe}tournaments/index.html").resolve().is_file()
+
+
+def test_une_page_de_format_redescend_sur_ses_tournois(built):
+    """Le maillon manquant du chemin réellement emprunté : accueil -> format -> ??? ."""
+    out, _ = built
+    page = _html(out, "formats/op16/index.html")
+    assert re.search(r'href="\.\./\.\./tournaments/[^"]+/"', page), \
+        "aucun lien vers un tournoi sur la page d'un format"
+
+
+def test_chaque_pack_est_telechargeable_et_pas_seulement_importable(built):
+    """La commande importe MAINTENANT ; le fichier se garde et se réimporte plus tard.
+
+    Deux usages distincts, et le second ne dépend de rien — ni du studio, ni d'un réseau au
+    moment de l'import. C'est ce que l'utilisateur a signalé comme perdu.
+    """
+    out, paths = built
+    vus = 0
+    for p in paths:
+        if p.suffix != ".html":
+            continue
+        texte = p.read_text(encoding="utf-8")
+        if 'class="import-block"' not in texte:
+            continue
+        vus += 1
+        m = re.search(r'<a class="pack-download" href="([^"]+)"[^>]*download', texte)
+        assert m, f"{p.relative_to(out)} : pack non téléchargeable"
+        href = m.group(1)
+        assert href.endswith(".json"), f"{p.relative_to(out)} : {href} n'est pas un pack"
+        assert not href.startswith(("http://", "https://", "/")), \
+            f"{p.relative_to(out)} : {href} doit être relatif au document"
+        # Que le fichier existe est vérifié par check_dist sur le build COMPLET : ce lot-ci
+        # n'écrit pas les packs, et exiger leur présence ici testerait l'autre lot.
+    assert vus >= 4, "trop peu de pages testées, le motif de détection a dû changer"
