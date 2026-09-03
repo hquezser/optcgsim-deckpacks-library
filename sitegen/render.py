@@ -25,6 +25,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
 from . import variants
+from .meta import (META_MAX_DECKS, META_WINDOW_DAYS, meta_pairs,
+                   window_distribution)
 from .archetype import CORE_THRESHOLD, MIN_LISTS_FOR_DIFF, core_cards, deck_delta
 from .model import Deck, Site, Tournament
 
@@ -46,8 +48,6 @@ __all__ = ["write_pages", "meta_pairs"]
 # Fenêtre et plafond du pack méta — miroir de la spec (cf. SPEC § « Définition du pack
 # méta »). Duplication volontaire : ce module ne dépend pas du lot C, qui peut ne pas
 # exister encore à l'exécution des tests de ce lot.
-META_WINDOW_DAYS = 60
-META_MAX_DECKS = 40
 META_AUTHOR = "optcgsim-deckpacks-library"
 
 # Taille standard d'un deck One Piece (leader + 50 cartes). Affichée dans le summary pour
@@ -68,33 +68,8 @@ DECK_SIZE = 50
 LEADER_GROUPS_CAP = 24
 
 
-def meta_pairs(site: Site) -> tuple[tuple[Tournament, Deck], ...]:
-    """Sélection déterministe des decks du pack méta (cf. SPEC).
-
-    Date de référence = date du tournoi le plus récent. Fenêtre de 60 jours avant,
-    `placement <= 8`, `archetype != ""`. Tri par date décroissante puis placement
-    croissant. Plafond à 40 decks.
-    """
-    ref = site.reference_date
-    if ref is None:
-        return ()
-    cutoff = ref - timedelta(days=META_WINDOW_DAYS)
-    pairs: list[tuple[Tournament, Deck]] = []
-    for t in site.tournaments:
-        if t.date is None or t.date < cutoff or t.date > ref:
-            continue
-        for d in t.parsed_decks:
-            if d.placement is not None and d.placement <= 8:
-                pairs.append((t, d))
-    pairs.sort(key=lambda p: (
-        # date décroissante
-        -(p[0].date.toordinal() if p[0].date else 0),
-        p[1].placement if p[1].placement is not None else 999,
-        p[0].slug,
-        p[1].slug,
-    ))
-    return tuple(pairs[:META_MAX_DECKS])
-
+# `meta_pairs` est RÉEXPORTÉ depuis `sitegen/meta.py` — voir le commentaire jumeau dans
+# packs.py : les deux copies avaient divergé sur le filtre de format.
 
 def _import_command(base_url: str, pack_url: str) -> str:
     """La commande copiable. `pack_url` est un chemin absolu depuis la racine du site."""
@@ -632,6 +607,8 @@ def write_pages(site: Site, out: Path, base_url: str,
         meta_name=meta_name,
         meta_pairs=meta,
         meta_groups=meta_groups,
+        meta_field=[(a, site.archetype_label(a), n) for a, n in window_distribution(site)],
+        meta_window_total=sum(n for _, n in window_distribution(site)),
         pack_url="/meta/deckpack.json",
         rel="../",
         **ctx_common,

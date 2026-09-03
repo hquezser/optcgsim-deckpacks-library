@@ -13,6 +13,7 @@ import json
 from datetime import timedelta
 from pathlib import Path
 
+from .meta import META_MAX_DECKS, META_WINDOW_DAYS, meta_pairs
 from .model import Deck, Site, Tournament
 
 __all__ = [
@@ -23,47 +24,18 @@ __all__ = [
     "write_packs",
 ]
 
-META_WINDOW_DAYS = 60
-META_MAX_DECKS = 40
 
 DEFAULT_AUTHOR = "optcgsim-deckpacks-library"
 
 
 # --- pack méta ------------------------------------------------------------------------
 
-def meta_pairs(site: Site) -> tuple[tuple[Tournament, Deck], ...]:
-    """Les decks du pack méta, déjà triés. () si le corpus n'a aucune date.
-
-    Déterministe — ne dépend jamais de la date du jour (cf. SPEC § « Définition du pack
-    méta »). Date de référence = date du tournoi le plus récent du corpus.
-    """
-    ref = site.reference_date
-    if ref is None:
-        return ()
-
-    # Ancrage au format courant : une fenêtre de dates seule peut chevaucher un
-    # changement de format et mélanger deux environnements de jeu sans le signaler.
-    current_format = site.current_format
-
-    start = ref - timedelta(days=META_WINDOW_DAYS)
-    candidates: list[tuple[Tournament, Deck]] = []
-    for t in site.tournaments:
-        if t.date is None or t.date < start or t.date > ref:
-            continue
-        if current_format and t.format_slug != current_format:
-            continue
-        for d in t.decks:
-            if not d.parsed:
-                continue
-            if d.placement is None or d.placement > 8:
-                continue
-            candidates.append((t, d))
-
-    # Date de tournoi décroissante, puis placement croissant. Le slug du tournoi sert
-    # d'arbitre final pour la stabilité totale de l'ordre entre tournois same-day.
-    candidates.sort(key=lambda p: (-(p[0].date.toordinal()), p[1].placement, p[0].slug, p[1].slug))
-    return tuple(candidates[:META_MAX_DECKS])
-
+# `meta_pairs` vit dans `sitegen/meta.py` et est RÉEXPORTÉ ici.
+#
+# Il en existait deux copies, une par lot, avec un commentaire « duplication volontaire ».
+# Elles avaient divergé : celle-ci filtrait sur le format courant, celle du rendu non. Sur
+# une fenêtre couvrant deux formats, la page affichait donc des decks que son propre pack ne
+# contenait pas. Une règle, un seul endroit.
 
 # --- construction du manifeste --------------------------------------------------------
 

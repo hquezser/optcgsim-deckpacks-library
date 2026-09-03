@@ -290,3 +290,38 @@ def test_converging_players_ignore_une_liste_unique():
 def test_archetype_label_retrouve_le_libelle():
     t = Tournament("2026-07-04-r", "R", date(2026, 7, 4), "", "", (_deck(),))
     assert Site(tournaments=(t,)).archetype_label("op15-058") == "Purple Enel"
+
+
+def test_un_libelle_ambigu_porte_l_id_du_leader():
+    """Les sources nomment le PERSONNAGE, pas le deck. Mesuré sur le corpus : 7 libellés
+    couvraient 21 archétypes, et « Monkey.D.Luffy » à lui seul HUIT leaders différents. Huit
+    lignes rigoureusement indiscernables sur une page de liste — le lecteur ne pouvait pas
+    savoir laquelle ouvrir.
+    """
+    def _d(leader, nom):
+        return Deck(raw_name=f"{nom} — J ({1})", archetype=nom, player="J", placement=1,
+                    leader_id=leader, cards=(("X", 4),), text=f"1x{leader}\n4xX")
+
+    site = Site(tournaments=(
+        _t("2026-07-04-a", date(2026, 7, 4), "OP16", (_d("OP15-098", "Luffy"),)),
+        _t("2026-07-05-b", date(2026, 7, 5), "OP16", (_d("ST29-001", "Luffy"),)),
+        _t("2026-07-06-c", date(2026, 7, 6), "OP16", (_d("OP16-022", "Green/Blue Luffy"),)),
+    ))
+    assert site.archetype_label("op15-098") == "Luffy (OP15-098)"
+    assert site.archetype_label("st29-001") == "Luffy (ST29-001)"
+    # Un libellé NON ambigu reste nu : l'ID partout alourdirait sans désambiguïser.
+    assert site.archetype_label("op16-022") == "Green/Blue Luffy"
+
+
+def test_aucun_libelle_ne_reste_ambigu_sur_un_corpus_quelconque():
+    """L'invariant qui compte : deux archétypes distincts n'ont jamais le même libellé."""
+    def _d(leader, nom):
+        return Deck(raw_name=f"{nom} — J ({1})", archetype=nom, player="J", placement=1,
+                    leader_id=leader, cards=(("X", 4),), text=f"1x{leader}\n4xX")
+
+    site = Site(tournaments=(
+        _t("2026-07-04-a", date(2026, 7, 4), "OP16",
+           tuple(_d(l, "Luffy") for l in ("OP15-098", "ST29-001", "OP09-061"))),
+    ))
+    libelles = [site.archetype_label(a) for a in site.leaders()]
+    assert len(set(libelles)) == len(libelles), f"libellés en collision : {libelles}"

@@ -243,3 +243,20 @@ main { padding: 1rem; max-width: 48rem; margin: 0 auto; }
 .m-same { opacity: 0.6; font-style: italic; }
 .m-tournament { font-size: 0.85rem; opacity: 0.8; }
 .m-import { font-size: 0.78rem; opacity: 0.75; word-break: break-all; user-select: all; }
+
+/* Distribution du champ sur /meta/. Une barre proportionnelle en CSS pur — la largeur vient
+   d'une variable posée par le gabarit, donc aucun script. */
+.field-rule { font-size: 0.85rem; opacity: 0.7; max-width: 46rem; margin: 0.2rem 0 0.8rem; }
+.field-list { list-style: none; padding-left: 0; margin: 0; }
+.field-row {
+  display: grid; grid-template-columns: minmax(8rem, 14rem) 2.5rem 3rem 1fr;
+  gap: 0.5rem; align-items: center; padding: 0.2rem 0; font-size: 0.92rem;
+}
+.field-n { text-align: right; font-variant-numeric: tabular-nums; opacity: 0.8; }
+.field-share { text-align: right; font-variant-numeric: tabular-nums; }
+.field-bar {
+  height: 0.55rem; border-radius: 3px;
+  background: color-mix(in srgb, var(--accent, #6ee7d7) 55%, transparent);
+  width: calc(var(--share) * 1%);
+  min-width: 2px;
+}

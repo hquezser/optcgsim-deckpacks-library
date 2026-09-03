@@ -385,6 +385,41 @@ directement doit savoir s'il regarde le méta courant ou un méta à venir.
   compacte (`rel="noreferrer nofollow"`, `target="_blank"`) — créditer la source reste
   obligatoire, l'étaler ne l'est pas.
 
+### Le pack méta est un ÉCHANTILLON REPRÉSENTATIF, pas les N plus récents
+
+Le pack méta répond à une question précise : **contre quoi vais-je jouer ?** Les 40 slots
+sont donc répartis **au prorata de la part de chaque archétype** dans la fenêtre, par la
+méthode des plus forts restes (somme exacte, égalités tranchées sur l'effectif puis le slug,
+donc sortie reproductible).
+
+La règle précédente — « les 40 listes les plus récentes » — laissait la date tout dominer.
+Mesuré sur le corpus au 2026-09-03, sur un vivier de 72 listes OP17 : le pack ne contenait
+que **5 tournois** et **12 archétypes sur 16**, avec **24,7 %** de sa composition mal
+répartie par rapport au champ réel. Après changement de règle : 9 tournois, 15 archétypes
+sur 16, **5,8 %** d'écart.
+
+Un archétype à 1 liste sur 72 n'obtient aucun slot, et c'est voulu — lui en donner un le
+retirerait à un archétype qu'on rencontre vraiment. Mais la **page** affiche la distribution
+complète de la fenêtre (`window_distribution`) : un archétype absent du pack reste visible et
+chiffré, avec sa part du champ.
+
+Dans un archétype, on prend sa **liste de consensus** : les listes sont regroupées à un
+échange près et on retient les représentants des plus gros groupes d'abord. Un pack
+d'entraînement doit contenir les builds qu'on rencontre, pas les tentatives isolées.
+
+**`meta_pairs` vit dans un seul module** (`sitegen/meta.py`). Il en existait deux copies, une
+par lot, avec un commentaire « duplication volontaire » — et elles avaient divergé : l'une
+filtrait sur le format courant, l'autre non. Sur une fenêtre couvrant deux formats, la page
+affichait donc des decks que son propre pack ne contenait pas.
+
+### Un libellé d'archétype ne doit jamais être ambigu
+
+Les sources nomment le **personnage**, pas le deck. Mesuré : 7 libellés couvraient 21
+archétypes distincts, et « Monkey.D.Luffy » à lui seul en désignait **huit** — huit lignes
+rigoureusement indiscernables sur une page de liste. `Site.archetype_label` ajoute donc l'ID
+du leader **quand et seulement quand** le libellé est partagé (`Monkey.D.Luffy (ST29-001)`).
+L'ajouter partout alourdirait 48 libellés sur 55 sans rien désambiguïser.
+
 ### Regroupement des listes quasi-identiques
 
 Troisième catégorie, distincte des deux ci-dessous : des listes **différentes**, séparées

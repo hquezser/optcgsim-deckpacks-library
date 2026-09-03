@@ -10,6 +10,25 @@
     placement ≤ 8, cap 40.</p>
 </section>
 
+{% if meta_field %}
+<section class="meta-field">
+  <h2>The field — {{ meta_window_total }} {{ meta_window_total | plur("list") }} in the window</h2>
+  <p class="field-rule">Every archetype that placed top 8 in the last 60 days, by share of
+    the field. The pack below samples this in proportion, so importing it means facing the
+    field roughly as it is — not the last few events.</p>
+  <ol class="field-list">
+    {% for aslug, label, n in meta_field %}
+    <li class="field-row">
+      <a href="{{ rel }}leaders/{{ aslug }}/">{{ label }}</a>
+      <span class="field-n">{{ n }}</span>
+      <span class="field-share">{{ (100 * n / meta_window_total) | round | int }}%</span>
+      <span class="field-bar" style="--share: {{ (100 * n / meta_window_total) | round | int }}"></span>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
 <section class="meta-groups">
   <h2>Composition by archetype</h2>
   {% for aslug, label, pairs in meta_groups %}

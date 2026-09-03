@@ -376,4 +376,43 @@ class Site:
         if not compte:
             return archetype_slug.upper()
         (_, label), _ = min(compte.items(), key=lambda kv: (kv[0][0], -kv[1], kv[0][1]))
+        # Désambiguïsation. Les sources nomment le PERSONNAGE, pas le deck : mesuré sur le
+        # corpus, 7 libellés couvrent 21 archétypes distincts, et « Monkey.D.Luffy » à lui
+        # seul en désigne HUIT leaders différents. Sur une page de liste, ces huit lignes
+        # étaient rigoureusement indiscernables — un lecteur ne pouvait pas savoir laquelle
+        # ouvrir. On ajoute donc l'ID du leader, et seulement quand il y a ambiguïté :
+        # l'ajouter partout alourdirait 48 libellés sur 55 sans rien désambiguïser.
+        if archetype_slug in self._labels_ambigus:
+            return f"{label} ({archetype_slug.upper()})"
+        return label
+
+    @property
+    def _labels_ambigus(self) -> frozenset[str]:
+        """Slugs dont le libellé est partagé avec au moins un autre archétype.
+
+        Mémoïsé via `object.__setattr__` : la dataclass est gelée, et recalculer cette carte
+        à chaque appel de `archetype_label` la rendrait quadratique sur le corpus.
+        """
+        cache = self.__dict__.get("_ambigus_cache")
+        if cache is None:
+            par_label: dict[str, list[str]] = {}
+            for aslug in self.leaders():
+                par_label.setdefault(self._label_brut(aslug), []).append(aslug)
+            cache = frozenset(a for slugs in par_label.values() if len(slugs) > 1
+                              for a in slugs)
+            object.__setattr__(self, "_ambigus_cache", cache)
+        return cache
+
+    def _label_brut(self, archetype_slug: str) -> str:
+        """Le libellé AVANT désambiguïsation. Existe pour que `_labels_ambigus` ne se
+        rappelle pas lui-même à l'infini."""
+        compte: dict[tuple[int, str], int] = {}
+        for t in self.tournaments:
+            for d in t.parsed_decks:
+                if d.archetype_slug == archetype_slug and d.archetype:
+                    cle = (0 if not t.is_online else 1, d.archetype)
+                    compte[cle] = compte.get(cle, 0) + 1
+        if not compte:
+            return archetype_slug.upper()
+        (_, label), _ = min(compte.items(), key=lambda kv: (kv[0][0], -kv[1], kv[0][1]))
         return label
